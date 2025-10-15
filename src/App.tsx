@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AdminLayout } from "./components/layout/AdminLayout";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import { useAuthStore } from "./stores/authStore";
@@ -11,6 +11,7 @@ import ManageUserApp from "./pages/ManageUserApp";
 import ManageAgentApp from "./pages/ManageAgentApp";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import EmailVerification from "./pages/EmailVerification";
 import ForgotPassword from "./pages/ForgotPassword";
 import ForgotPasswordVerify from "./pages/ForgotPasswordVerify";
 import ForgotPasswordReset from "./pages/ForgotPasswordReset";
@@ -40,20 +41,34 @@ const LoginRedirect = () => {
 
 // Component to handle successful login redirect
 const LoginSuccessHandler = () => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, initializeAuth } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Initialize Clerk authentication on app start
+    initializeAuth();
+  }, [initializeAuth]);
   
   useEffect(() => {
     if (isAuthenticated) {
       const lastRoute = sessionStorage.getItem('lastRoute');
-      if (lastRoute && lastRoute !== '/login') {
-        sessionStorage.removeItem('lastRoute');
-        navigate(lastRoute, { replace: true });
-      } else {
-        toast("Signed in successfully!");
+      const justLoggedIn = sessionStorage.getItem('justLoggedIn');
+      
+      // Only show toast and redirect if user just logged in
+      if (justLoggedIn === 'true') {
+        sessionStorage.removeItem('justLoggedIn');
+        
+        if (lastRoute && lastRoute !== '/login') {
+          sessionStorage.removeItem('lastRoute');
+          navigate(lastRoute, { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
+        toast.success('Login successful!');
       }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location.pathname]);
   
   return null;
 };
@@ -68,6 +83,7 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<LoginRedirect />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/email-verification" element={<EmailVerification />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/forgot-password/verify" element={<ForgotPasswordVerify />} />
           <Route path="/forgot-password/reset" element={<ForgotPasswordReset />} />
