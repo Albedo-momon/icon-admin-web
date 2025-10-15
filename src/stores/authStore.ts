@@ -57,6 +57,10 @@ export const useAuthStore = create<AuthState>()(
       
       initializeAuth: async () => {
         console.log('AuthStore - Starting auth initialization, isLoading:', get().isLoading);
+        
+        // Set loading to true at the start to prevent flash
+        set({ isLoading: true });
+        
         try {
           // Initialize Clerk first
           const clerkInstance = await initializeClerk();
@@ -68,11 +72,11 @@ export const useAuthStore = create<AuthState>()(
             set({ user, isAuthenticated: true, isLoading: false });
           } else {
             console.log('AuthStore - No user found in Clerk, setting unauthenticated');
-            set({ isLoading: false });
+            set({ user: null, isAuthenticated: false, isLoading: false });
           }
         } catch (error) {
           console.error('Auth initialization error:', error);
-          set({ isLoading: false });
+          set({ user: null, isAuthenticated: false, isLoading: false });
         }
       },
       
@@ -309,10 +313,12 @@ export const useAuthStore = create<AuthState>()(
           : { rememberMe: false },
       onRehydrateStorage: () => (state) => {
         console.log('AuthStore - Rehydrating storage, state:', state);
-        // Don't automatically set loading to false here
-        // Let initializeAuth handle the loading state properly
+        // Always keep loading true during rehydration to prevent flash
+        // The initializeAuth function will handle setting the correct state
         if (state) {
-          state.isLoading = true; // Keep loading true until auth is verified
+          state.isLoading = true;
+          // Don't trust the persisted authentication state until verified
+          state.isAuthenticated = false;
         }
       },
     }
