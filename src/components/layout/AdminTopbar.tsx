@@ -79,17 +79,23 @@ export function AdminTopbar() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/profile')}>
+              <DropdownMenuItem 
+                className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-300"
+                onClick={() => navigate('/profile')}
+              >
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/profile?tab=preferences')}>
+              <DropdownMenuItem 
+                className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-300"
+                onClick={() => navigate('/profile?tab=preferences')}
+              >
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Preferences</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                className="text-destructive focus:text-destructive cursor-pointer"
+                className="text-destructive focus:text-destructive cursor-pointer focus:bg-transparent hover:bg-transparent"
                 onClick={handleLogout}
                 aria-label="Logout"
               >
