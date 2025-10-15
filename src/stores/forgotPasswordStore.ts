@@ -126,8 +126,15 @@ export const useForgotPasswordStore = create<ForgotPasswordState>()(
           });
           
           if (result.status === 'complete') {
-            // Password reset successful, set active session
-            await clerkInstance.setActive({ session: result.createdSessionId });
+            // Password reset successful, but don't set active session
+            // This ensures the user needs to manually log in with their new password
+            console.log('Password reset successful, session not activated');
+            
+            // Clear any existing session to ensure clean state
+            await clerkInstance.signOut();
+            
+            // Clear the forgot password store state
+            get().reset();
           } else {
             throw new Error('Password reset failed');
           }

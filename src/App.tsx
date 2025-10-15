@@ -30,7 +30,12 @@ const queryClient = new QueryClient({
 
 // Component to handle login redirect logic
 const LoginRedirect = () => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, initializeAuth } = useAuthStore();
+  
+  useEffect(() => {
+    // Initialize auth to check if user is already authenticated (e.g., after password reset)
+    initializeAuth();
+  }, [initializeAuth]);
   
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -67,6 +72,9 @@ const LoginSuccessHandler = () => {
         }
         toast.success('Login successful!');
       }
+    } else {
+      // Clear any session flags when not authenticated
+      sessionStorage.removeItem('justLoggedIn');
     }
   }, [isAuthenticated, navigate, location.pathname]);
   

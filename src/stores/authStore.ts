@@ -72,11 +72,17 @@ export const useAuthStore = create<AuthState>()(
             set({ user, isAuthenticated: true, isLoading: false });
           } else {
             console.log('AuthStore - No user found in Clerk, setting unauthenticated');
+            // Clear any persisted authentication state when no active session
             set({ user: null, isAuthenticated: false, isLoading: false });
+            
+            // Clear localStorage if no active session to prevent stale data
+            localStorage.removeItem('auth-storage');
           }
         } catch (error) {
           console.error('Auth initialization error:', error);
           set({ user: null, isAuthenticated: false, isLoading: false });
+          // Clear localStorage on error to prevent stale data
+          localStorage.removeItem('auth-storage');
         }
       },
       
@@ -131,7 +137,22 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error: any) {
           console.error('Login error:', error);
-          throw new Error(error.errors?.[0]?.message || error.message || 'Invalid credentials');
+          
+          // Handle specific Clerk error codes
+          if (error.errors && error.errors.length > 0) {
+            const firstError = error.errors[0];
+            
+            // Handle rate limiting errors
+            if (firstError.code === 'rate_limit_exceeded' || 
+                firstError.message?.includes('Too many requests') ||
+                firstError.message?.includes('rate limit')) {
+              throw new Error('Too many login attempts. Please wait a few minutes before trying again.');
+            }
+            
+            throw new Error(firstError.longMessage || firstError.message || 'Invalid credentials');
+          }
+          
+          throw new Error(error.message || 'Invalid credentials');
         }
       },
       
