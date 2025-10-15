@@ -15,6 +15,7 @@ import EmailVerification from "./pages/EmailVerification";
 import ForgotPassword from "./pages/ForgotPassword";
 import ForgotPasswordVerify from "./pages/ForgotPasswordVerify";
 import ForgotPasswordReset from "./pages/ForgotPasswordReset";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -131,6 +132,16 @@ const App = () => (
               <AuthGuard>
                 <AdminLayout>
                   <ManageAgentApp />
+                </AdminLayout>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <AuthGuard>
+                <AdminLayout>
+                  <Profile />
                 </AdminLayout>
               </AuthGuard>
             }
