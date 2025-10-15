@@ -98,6 +98,16 @@ const App = () => (
             }
           />
           <Route
+            path="/dashboard"
+            element={
+              <AuthGuard>
+                <AdminLayout>
+                  <Dashboard />
+                </AdminLayout>
+              </AuthGuard>
+            }
+          />
+          <Route
             path="/manage-user-app"
             element={
               <AuthGuard>

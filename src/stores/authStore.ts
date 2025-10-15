@@ -8,16 +8,15 @@ if (!publishableKey) {
   throw new Error('Missing Clerk Publishable Key');
 }
 
-const clerk = new Clerk(publishableKey);
+let clerkInstance: Clerk | null = null;
 
 // Initialize Clerk asynchronously
-let clerkInitialized = false;
 const initializeClerk = async () => {
-  if (!clerkInitialized) {
-    await clerk.load();
-    clerkInitialized = true;
+  if (!clerkInstance) {
+    clerkInstance = new Clerk(publishableKey);
+    await clerkInstance.load();
   }
-  return clerk;
+  return clerkInstance;
 };
 
 interface User {
@@ -30,6 +29,7 @@ interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   rememberMe: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
@@ -52,16 +52,27 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
+      isLoading: true,
       rememberMe: false,
       
       initializeAuth: async () => {
-        // Initialize Clerk first
-        const clerkInstance = await initializeClerk();
-        
-        // Check if user is already signed in with Clerk
-        if (clerkInstance.user) {
-          const user = convertClerkUser(clerkInstance.user);
-          set({ user, isAuthenticated: true });
+        console.log('AuthStore - Starting auth initialization, isLoading:', get().isLoading);
+        try {
+          // Initialize Clerk first
+          const clerkInstance = await initializeClerk();
+          
+          // Check if user is already signed in with Clerk
+          if (clerkInstance.user) {
+            console.log('AuthStore - User found in Clerk, setting authenticated');
+            const user = convertClerkUser(clerkInstance.user);
+            set({ user, isAuthenticated: true, isLoading: false });
+          } else {
+            console.log('AuthStore - No user found in Clerk, setting unauthenticated');
+            set({ isLoading: false });
+          }
+        } catch (error) {
+          console.error('Auth initialization error:', error);
+          set({ isLoading: false });
         }
       },
       
@@ -296,6 +307,14 @@ export const useAuthStore = create<AuthState>()(
         state.rememberMe
           ? { user: state.user, isAuthenticated: state.isAuthenticated, rememberMe: state.rememberMe }
           : { rememberMe: false },
+      onRehydrateStorage: () => (state) => {
+        console.log('AuthStore - Rehydrating storage, state:', state);
+        // Don't automatically set loading to false here
+        // Let initializeAuth handle the loading state properly
+        if (state) {
+          state.isLoading = true; // Keep loading true until auth is verified
+        }
+      },
     }
   )
 );

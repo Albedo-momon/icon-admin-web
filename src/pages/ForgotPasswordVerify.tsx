@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 
 const ForgotPasswordVerify = () => {
   const navigate = useNavigate();
-  const { email, resend } = useForgotPasswordStore();
+  const { email, verifyOtp, resend } = useForgotPasswordStore();
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [otpError, setOtpError] = useState(false);
@@ -36,28 +36,19 @@ const ForgotPasswordVerify = () => {
   }, [countdown]);
 
   const handleVerify = async () => {
-    if (otp.length !== 6) {
-      setOtpError(true);
-      return;
-    }
-
-    // Mock: reject all zeros
-    if (otp === '000000') {
-      setOtpError(true);
-      toast.error('Invalid verification code');
-      return;
-    }
-
+    if (otp.length !== 6) return;
+    
     setIsVerifying(true);
+    setOtpError(false);
+    
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      toast.success('Verification successful!');
+      await verifyOtp(otp);
+      toast.success('Code verified successfully!');
       navigate('/forgot-password/reset');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
       setOtpError(true);
-      toast.error('Invalid verification code');
+      toast.error(error.message || 'Invalid code. Please try again.');
     } finally {
       setIsVerifying(false);
     }
@@ -66,10 +57,15 @@ const ForgotPasswordVerify = () => {
   const handleResend = async () => {
     if (!canResend) return;
     
-    resend();
-    setCountdown(30);
-    setCanResend(false);
-    toast.success('New code sent to your email');
+    try {
+      await resend();
+      setCountdown(30);
+      setCanResend(false);
+      toast.success('New code sent to your email');
+    } catch (error: any) {
+      console.error('Resend error:', error);
+      toast.error(error.message || 'Failed to resend code');
+    }
   };
 
   const handleOtpChange = (value: string) => {

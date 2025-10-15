@@ -10,6 +10,7 @@ import { AnimatedCard } from '@/components/auth/AnimatedCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useForgotPasswordStore } from '@/stores/forgotPasswordStore';
 import { toast } from 'sonner';
 
 const resetPasswordSchema = z.object({
@@ -29,6 +30,7 @@ type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 const ForgotPasswordReset = () => {
   const navigate = useNavigate();
+  const { resetPassword } = useForgotPasswordStore();
   const [isResetting, setIsResetting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -71,16 +73,15 @@ const ForgotPasswordReset = () => {
     return 'Strong';
   };
 
-  const onSubmit = async (_data: ResetPasswordFormData) => {
+  const onSubmit = async (data: ResetPasswordFormData) => {
     setIsResetting(true);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
+      await resetPassword(data.password);
       toast.success('Password reset successfully!');
       navigate('/login');
-    } catch (error) {
-      toast.error('Failed to reset password. Please try again.');
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      toast.error(error.message || 'Failed to reset password. Please try again.');
     } finally {
       setIsResetting(false);
     }

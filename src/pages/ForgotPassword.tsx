@@ -35,15 +35,13 @@ const ForgotPassword = () => {
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsSubmitting(true);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
       setEmail(data.email);
-      sendOtp();
+      await sendOtp();
       toast.success(`Verification code sent to ${data.email}`);
       navigate('/forgot-password/verify');
-    } catch (error) {
-      toast.error('Something went wrong. Please try again.');
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      toast.error(error.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

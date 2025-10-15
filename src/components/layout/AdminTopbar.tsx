@@ -17,10 +17,15 @@ export function AdminTopbar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    toast.success("Signed out");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Signed out");
+      navigate("/login");
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error("Failed to sign out");
+    }
   };
 
   return (
