@@ -5,8 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AdminLayout } from "./components/layout/AdminLayout";
 import { AuthGuard } from "./components/auth/AuthGuard";
+import { AdminGuard } from "./components/auth/AdminGuard";
 import { useAuthStore } from "./stores/authStore";
 import { LoadingSpinner } from "./components/ui/loading-spinner";
+import { isAdmin } from "./services/authService";
 import Dashboard from "./pages/Dashboard";
 import ManageUserApp from "./pages/ManageUserApp";
 import ManageAgentApp from "./pages/ManageAgentApp";
@@ -18,7 +20,7 @@ import ForgotPasswordVerify from "./pages/ForgotPasswordVerify";
 import ForgotPasswordReset from "./pages/ForgotPasswordReset";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient({
@@ -30,14 +32,56 @@ const queryClient = new QueryClient({
   },
 });
 
+// Component to handle root route redirect
+const RootRedirect = () => {
+  const { isAuthenticated, isLoading, hasInitialized, userProfile, logout, initializeAuth } = useAuthStore();
+  
+  // Initialize auth if not already done
+  useEffect(() => {
+    if (!hasInitialized) {
+      initializeAuth();
+    }
+  }, [hasInitialized, initializeAuth]);
+  
+  // Show loading while authentication state is being determined
+  if (isLoading || !hasInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <LoadingSpinner size="lg" text="Loading..." />
+      </div>
+    );
+  }
+  
+  // Check if user is authenticated and has cached data
+  if (isAuthenticated && userProfile) {
+    // Check if user has admin role
+    if (isAdmin(userProfile)) {
+      // User is authenticated and is admin, redirect to dashboard
+      return <Navigate to="/dashboard" replace />;
+    } else {
+      // User is authenticated but not admin, clear cache and redirect to login
+      logout();
+      return <Navigate to="/login" replace />;
+    }
+  }
+  
+  // No user or not authenticated, clear cache and redirect to login
+  if (isAuthenticated || userProfile) {
+    logout();
+  }
+  return <Navigate to="/login" replace />;
+};
+
 // Component to handle login redirect logic
 const LoginRedirect = () => {
-  const { isAuthenticated, isLoading, hasInitialized, initializeAuth } = useAuthStore();
+  const { isAuthenticated, isLoading, hasInitialized, userProfile, initializeAuth } = useAuthStore();
   
   useEffect(() => {
     // Initialize auth to check if user is already authenticated (e.g., after password reset)
-    initializeAuth();
-  }, [initializeAuth]);
+    if (!hasInitialized) {
+      initializeAuth();
+    }
+  }, [hasInitialized, initializeAuth]);
 
   // Show loading screen while authentication is being verified or not initialized yet
   if (isLoading || !hasInitialized) {
@@ -48,23 +92,19 @@ const LoginRedirect = () => {
     );
   }
   
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+  // Only redirect if user is authenticated AND has admin role
+  if (isAuthenticated && userProfile && isAdmin(userProfile)) {
+    return <Navigate to="/dashboard" replace />;
   }
   
+  // Stay on login page for all other cases (not authenticated, no user profile, or not admin)
   return <Login />;
 };
 
-// Component to handle successful login redirect
+// Component to handle successful login redirect - only for authenticated routes
 const LoginSuccessHandler = () => {
-  const { isAuthenticated, initializeAuth } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
-  const location = useLocation();
-  
-  useEffect(() => {
-    // Initialize Clerk authentication on app start
-    initializeAuth();
-  }, [initializeAuth]);
   
   useEffect(() => {
     if (isAuthenticated) {
@@ -83,11 +123,8 @@ const LoginSuccessHandler = () => {
         }
         toast.success('Login successful!');
       }
-    } else {
-      // Clear any session flags when not authenticated
-      sessionStorage.removeItem('justLoggedIn');
     }
-  }, [isAuthenticated, navigate, location.pathname]);
+  }, [isAuthenticated, navigate]);
   
   return null;
 };
@@ -98,7 +135,6 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <LoginSuccessHandler />
         <Routes>
           <Route path="/login" element={<LoginRedirect />} />
           <Route path="/register" element={<Register />} />
@@ -106,44 +142,35 @@ const App = () => (
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/forgot-password/verify" element={<ForgotPasswordVerify />} />
           <Route path="/forgot-password/reset" element={<ForgotPasswordReset />} />
-          <Route
-            path="/"
-            element={
-              <AuthGuard>
-                <AdminLayout>
-                  <Dashboard />
-                </AdminLayout>
-              </AuthGuard>
-            }
-          />
+          <Route path="/" element={<RootRedirect />} />
           <Route
             path="/dashboard"
             element={
-              <AuthGuard>
+              <AdminGuard>
                 <AdminLayout>
                   <Dashboard />
                 </AdminLayout>
-              </AuthGuard>
+              </AdminGuard>
             }
           />
           <Route
             path="/manage-user-app"
             element={
-              <AuthGuard>
+              <AdminGuard>
                 <AdminLayout>
                   <ManageUserApp />
                 </AdminLayout>
-              </AuthGuard>
+              </AdminGuard>
             }
           />
           <Route
             path="/manage-agent-app"
             element={
-              <AuthGuard>
+              <AdminGuard>
                 <AdminLayout>
                   <ManageAgentApp />
                 </AdminLayout>
-              </AuthGuard>
+              </AdminGuard>
             }
           />
           <Route

@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useCallback } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -8,11 +8,23 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, isLoading, hasInitialized, userProfile } = useAuthStore();
+  const { isAuthenticated, isLoading, hasInitialized, userProfile, initializeAuth } = useAuthStore();
   const location = useLocation();
 
   // Debug logging
   console.log('AuthGuard - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'userProfile:', userProfile);
+
+  // Memoize the initialization function to prevent infinite re-renders
+  const handleInitialization = useCallback(() => {
+    if (!hasInitialized) {
+      initializeAuth();
+    }
+  }, [hasInitialized, initializeAuth]);
+
+  // Initialize authentication only when this guard is accessed (protected routes)
+  useEffect(() => {
+    handleInitialization();
+  }, [handleInitialization]);
 
   useEffect(() => {
     // Store the current route in sessionStorage if user is not authenticated

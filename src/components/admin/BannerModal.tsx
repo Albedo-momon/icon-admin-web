@@ -20,6 +20,7 @@ import type { Banner } from "@/store/adminStore";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "@/hooks/use-toast";
 import { env } from "@/env";
+import { getJWTToken } from "@/services/jwtService";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -131,20 +132,30 @@ export function BannerModal({ open, onOpenChange, onSave, banner }: BannerModalP
 
   // API call to get presigned URL
   const getPresignedUrl = async (key: string, contentType: string) => {
-    const response = await fetch(`${env.apiUrl}/uploads/presign`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${user?.id}`, // Using user ID as token for now
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ key, contentType }),
-    });
+    try {
+      const token = await getJWTToken();
+      const response = await fetch(`${env.apiUrl}/uploads/presign`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          section: "hero",
+          filename: key.split('/').pop() || 'banner.jpg',
+          contentType 
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to get presigned URL');
+      if (!response.ok) {
+        throw new Error('Failed to get presigned URL');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error getting presigned URL:', error);
+      throw error;
     }
-
-    return response.json();
   };
 
   // Upload file to S3
@@ -179,20 +190,32 @@ export function BannerModal({ open, onOpenChange, onSave, banner }: BannerModalP
 
   // Create banner record
   const createBannerRecord = async (data: { title: string; imageUrl: string; status: string; sort: number }) => {
-    const response = await fetch(`${env.apiUrl}/admin/hero-banners`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${user?.id}`, // Using user ID as token for now
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+    try {
+      const token = await getJWTToken();
+      const response = await fetch(`${env.apiUrl}/admin/hero-banners`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: data.title,
+          imageUrl: data.imageUrl,
+          isActive: data.status === 'ACTIVE',
+          sortOrder: data.sort
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to create banner record');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to create banner record');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error creating banner record:', error);
+      throw error;
     }
-
-    return response.json();
   };
 
   const onSubmit = async (data: BannerFormData) => {
