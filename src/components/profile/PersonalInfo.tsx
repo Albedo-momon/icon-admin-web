@@ -56,7 +56,7 @@ export function PersonalInfo() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="bg-gray-100 border-gray-200">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-text-heading">Personal Information</CardTitle>
           <CardDescription>Update your personal details and contact information.</CardDescription>
@@ -70,7 +70,7 @@ export function PersonalInfo() {
                   id="fullName"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="bg-white border-gray-300 focus:ring-primary"
+                  className="bg-background border-border focus:ring-primary"
                 />
               </div>
               <div className="space-y-2">
@@ -80,7 +80,7 @@ export function PersonalInfo() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="bg-white border-gray-300 focus:ring-primary"
+                  className="bg-background border-border focus:ring-primary"
                 />
               </div>
               <div className="space-y-2">
@@ -89,7 +89,7 @@ export function PersonalInfo() {
                   id="phone"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="bg-white border-gray-300 focus:ring-primary"
+                  className="bg-background border-border focus:ring-primary"
                 />
               </div>
               <div className="space-y-2">
@@ -98,7 +98,7 @@ export function PersonalInfo() {
                   id="company"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="bg-white border-gray-300 focus:ring-primary"
+                  className="bg-background border-border focus:ring-primary"
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
@@ -107,7 +107,7 @@ export function PersonalInfo() {
                   id="location"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="bg-white border-gray-300 focus:ring-primary"
+                  className="bg-background border-border focus:ring-primary"
                 />
               </div>
             </div>

@@ -53,7 +53,7 @@ export function SecuritySettings() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="bg-gray-100 border-gray-200">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-text-heading">Change Password</CardTitle>
           <CardDescription>Update your password to keep your account secure.</CardDescription>
@@ -71,12 +71,12 @@ export function SecuritySettings() {
                   type={showPassword.current ? "text" : "password"}
                   value={password.current}
                   onChange={(e) => setPassword({ ...password, current: e.target.value })}
-                  className="bg-white border-gray-300 pr-10"
+                  className="bg-background border-border pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword({ ...showPassword, current: !showPassword.current })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -90,12 +90,12 @@ export function SecuritySettings() {
                   type={showPassword.new ? "text" : "password"}
                   value={password.new}
                   onChange={(e) => setPassword({ ...password, new: e.target.value })}
-                  className="bg-white border-gray-300 pr-10"
+                  className="bg-background border-border pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword({ ...showPassword, new: !showPassword.new })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -121,12 +121,12 @@ export function SecuritySettings() {
                   type={showPassword.confirm ? "text" : "password"}
                   value={password.confirm}
                   onChange={(e) => setPassword({ ...password, confirm: e.target.value })}
-                  className="bg-white border-gray-300 pr-10"
+                  className="bg-background border-border pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword({ ...showPassword, confirm: !showPassword.confirm })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
