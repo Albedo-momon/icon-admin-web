@@ -43,7 +43,7 @@ interface AdminStore {
   agents: Agent[];
   
   // Banner methods
-  createBanner: (banner: Omit<Banner, 'id' | 'sortOrder' | 'updatedAt'>) => void;
+  createBanner: (banner: Omit<Banner, 'id' | 'updatedAt'>) => void;
   updateBanner: (id: string, banner: Partial<Banner>) => void;
   deleteBanner: (id: string) => void;
   reorderBanners: (banners: Banner[]) => void;
@@ -114,11 +114,10 @@ export const useAdminStore = create<AdminStore>()(
       // Banner methods
       createBanner: (banner) =>
         set((state) => {
-          const maxSort = Math.max(0, ...state.banners.map((b) => b.sortOrder));
           const newBanner: Banner = {
             ...banner,
             id: Date.now().toString(),
-            sortOrder: maxSort + 1,
+            sortOrder: banner.sortOrder || Math.max(0, ...state.banners.map((b) => b.sortOrder)) + 1,
             updatedAt: new Date().toISOString().split('T')[0],
           };
           return { banners: [...state.banners, newBanner] };

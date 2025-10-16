@@ -38,12 +38,22 @@ export default function ManageUserApp() {
     setBannerModalOpen(true);
   };
 
-  const handleSaveBanner = (data: { title: string; imageUrl: string; isActive: boolean; validFrom?: string; validTo?: string }) => {
+  const handleSaveBanner = (data: { title: string; imageUrl: string; status: string; sort: number }) => {
     if (editingBanner) {
-      updateBanner(editingBanner.id, data);
+      updateBanner(editingBanner.id, {
+        title: data.title,
+        imageUrl: data.imageUrl,
+        isActive: data.status === "ACTIVE",
+        sortOrder: data.sort,
+      });
       toast({ title: "Banner updated", description: "Hero banner has been updated successfully" });
     } else {
-      createBanner(data);
+      createBanner({
+        title: data.title,
+        imageUrl: data.imageUrl,
+        isActive: data.status === "ACTIVE",
+        sortOrder: data.sort,
+      });
       toast({ title: "Banner created", description: "New hero banner has been added" });
     }
   };
