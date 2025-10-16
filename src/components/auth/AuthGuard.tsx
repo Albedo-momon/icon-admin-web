@@ -26,7 +26,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     console.log('AuthGuard - Showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <LoadingSpinner size="lg" text="Verifying authentication..." />
+        <LoadingSpinner size="lg" text="Loading..." />
       </div>
     );
   }
