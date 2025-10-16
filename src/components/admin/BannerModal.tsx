@@ -27,11 +27,12 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const bannerSchema = z.object({
   title: z.string().min(1, "Title is required").max(120, "Title must be 120 characters or less"),
+  // Optional in edit mode; required in create (validated in onSubmit)
   image: z
     .instanceof(FileList)
-    .refine((files) => files.length > 0, "Image is required")
-    .refine((files) => files[0]?.size <= MAX_FILE_SIZE, "Max file size is 10MB")
-    .refine((files) => ALLOWED_TYPES.includes(files[0]?.type), "Only JPEG, PNG, and WebP images are allowed"),
+    .optional()
+    .refine((files) => !files || files.length === 0 || files[0]?.size <= MAX_FILE_SIZE, "Max file size is 10MB")
+    .refine((files) => !files || files.length === 0 || ALLOWED_TYPES.includes(files[0]?.type), "Only JPEG, PNG, and WebP images are allowed"),
   status: z.enum(["ACTIVE", "INACTIVE"]),
   sort: z.number().min(0, "Sort order must be 0 or greater"),
 });
@@ -108,26 +109,57 @@ export function BannerModal({ open, onOpenChange, onSave, banner }: BannerModalP
   }, [imageFiles]);
 
   useEffect(() => {
-    if (open) {
-      if (banner) {
-        reset({
-          title: banner.title,
-          status: banner.isActive ? "ACTIVE" : "INACTIVE",
-          sort: banner.sortOrder,
-        });
-        setPreview(banner.imageUrl);
+    const prefill = async () => {
+      if (banner && !env.useMock) {
+        try {
+          const token = await getJWTToken();
+          const res = await fetch(`${env.apiUrl}/admin/hero-banners/${banner.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const b = await res.json();
+            reset({
+              title: b.title ?? banner.title,
+              status: (b.status ?? (banner.isActive ? 'ACTIVE' : 'INACTIVE')), 
+              sort: Number(b.sort ?? banner.sortOrder ?? 0),
+            });
+            setPreview(b.imageUrl ?? banner.imageUrl);
+          } else {
+            // Fallback to existing banner
+            reset({
+              title: banner.title,
+              status: banner.isActive ? "ACTIVE" : "INACTIVE",
+              sort: banner.sortOrder,
+            });
+            setPreview(banner.imageUrl);
+          }
+        } catch (err) {
+          console.error('Prefill edit failed', err);
+          reset({
+            title: banner.title,
+            status: banner.isActive ? "ACTIVE" : "INACTIVE",
+            sort: banner.sortOrder,
+          });
+          setPreview(banner.imageUrl);
+        }
       } else {
-        reset({
-          title: "",
-          status: "ACTIVE",
-          sort: 0,
-        });
-        setPreview("");
+        if (banner) {
+          reset({
+            title: banner.title,
+            status: banner.isActive ? "ACTIVE" : "INACTIVE",
+            sort: banner.sortOrder,
+          });
+          setPreview(banner.imageUrl);
+        } else {
+          reset({ title: "", status: "ACTIVE", sort: 0 });
+          setPreview("");
+        }
       }
       setUploadState('idle');
       setUploadProgress(0);
       setCachedPublicUrl('');
-    }
+    };
+    if (open) prefill();
   }, [open, banner, reset]);
 
   // API call to get presigned URL
@@ -219,16 +251,32 @@ export function BannerModal({ open, onOpenChange, onSave, banner }: BannerModalP
   };
 
   const onSubmit = async (data: BannerFormData) => {
-    // If editing and no new image, use existing flow
+    // Edit without image replacement: PATCH only changed fields
     if (banner && (!data.image || data.image.length === 0)) {
-      onSave({
-        title: data.title,
-        imageUrl: banner.imageUrl,
-        status: data.status,
-        sort: data.sort,
-      });
-      onOpenChange(false);
-      return;
+      if (env.useMock) {
+        onSave({ title: data.title, imageUrl: banner.imageUrl, status: data.status, sort: data.sort });
+        onOpenChange(false);
+        return;
+      }
+      try {
+        const token = await getJWTToken();
+        const response = await fetch(`${env.apiUrl}/admin/hero-banners/${banner.id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: data.title, status: data.status, sort: data.sort }),
+        });
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.message || 'Failed to update banner');
+        }
+        toast({ title: 'Updated', description: 'Banner updated successfully' });
+        onSave({ title: data.title, imageUrl: banner.imageUrl, status: data.status, sort: data.sort });
+        onOpenChange(false);
+        return;
+      } catch (error: any) {
+        toast({ title: 'Error', description: error.message || 'Failed to update banner', variant: 'destructive' });
+        return;
+      }
     }
 
     // If we have a cached public URL from a previous failed attempt, retry with it
@@ -269,7 +317,7 @@ export function BannerModal({ open, onOpenChange, onSave, banner }: BannerModalP
       }
     }
 
-    if (!data.image || data.image.length === 0) {
+    if (!banner && (!data.image || data.image.length === 0)) {
       toast({
         title: "Error",
         description: "Please select an image file.",
@@ -278,7 +326,15 @@ export function BannerModal({ open, onOpenChange, onSave, banner }: BannerModalP
       return;
     }
 
-    const file = data.image[0];
+    const file = data.image?.[0];
+    if (!file) {
+      toast({
+        title: "Error",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       // Step 1: Validation
@@ -299,12 +355,26 @@ export function BannerModal({ open, onOpenChange, onSave, banner }: BannerModalP
       
       // Step 4: Create banner record
       setUploadState('creating');
-      await createBannerRecord({
-        title: data.title,
-        imageUrl: publicUrl,
-        status: data.status,
-        sort: data.sort,
-      });
+      if (banner) {
+        // Edit with image replacement: PATCH with new imageUrl
+        const token = await getJWTToken();
+        const response = await fetch(`${env.apiUrl}/admin/hero-banners/${banner.id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl: publicUrl, title: data.title, status: data.status, sort: data.sort }),
+        });
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.message || 'Failed to update banner');
+        }
+      } else {
+        await createBannerRecord({
+          title: data.title,
+          imageUrl: publicUrl,
+          status: data.status,
+          sort: data.sort,
+        });
+      }
       
       // Success!
       onSave({
@@ -314,10 +384,7 @@ export function BannerModal({ open, onOpenChange, onSave, banner }: BannerModalP
         sort: data.sort,
       });
       
-      toast({
-        title: "Success",
-        description: "Banner created successfully!",
-      });
+      toast({ title: "Success", description: banner ? "Banner updated successfully!" : "Banner created successfully!" });
       
       setUploadState('success');
       onOpenChange(false);
