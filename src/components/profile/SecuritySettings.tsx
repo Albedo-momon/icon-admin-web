@@ -55,8 +55,8 @@ export function SecuritySettings() {
     >
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-card-foreground">Change Password</CardTitle>
-          <CardDescription className="text-muted-foreground">Update your password to keep your account secure.</CardDescription>
+          <CardTitle className="text-text-heading">Change Password</CardTitle>
+          <CardDescription>Update your password to keep your account secure.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <motion.div
@@ -64,7 +64,7 @@ export function SecuritySettings() {
             transition={{ duration: 0.4 }}
           >
             <div className="space-y-2">
-              <Label htmlFor="currentPassword" className="text-card-foreground">Current Password</Label>
+              <Label htmlFor="currentPassword" className="text-text-body">Current Password</Label>
               <div className="relative">
                 <Input
                   id="currentPassword"
@@ -76,14 +76,14 @@ export function SecuritySettings() {
                 <button
                   type="button"
                   onClick={() => setShowPassword({ ...showPassword, current: !showPassword.current })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-card-foreground">New Password</Label>
+              <Label htmlFor="newPassword" className="text-text-body">New Password</Label>
               <div className="relative">
                 <Input
                   id="newPassword"
@@ -95,7 +95,7 @@ export function SecuritySettings() {
                 <button
                   type="button"
                   onClick={() => setShowPassword({ ...showPassword, new: !showPassword.new })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -107,14 +107,14 @@ export function SecuritySettings() {
                   className="space-y-1"
                 >
                   <Progress value={strength} className={`h-2 ${strengthColor}`} />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-text-muted">
                     Password strength: {strength < 50 ? "Weak" : strength < 75 ? "Medium" : "Strong"}
                   </p>
                 </motion.div>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-card-foreground">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-text-body">Confirm Password</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -126,7 +126,7 @@ export function SecuritySettings() {
                 <button
                   type="button"
                   onClick={() => setShowPassword({ ...showPassword, confirm: !showPassword.confirm })}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>

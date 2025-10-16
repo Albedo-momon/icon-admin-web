@@ -80,14 +80,14 @@ export function AdminTopbar() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-300"
+                className="hover:shadow-lg dark:hover:shadow-gray-500/20 transition-all duration-300"
                 onClick={() => navigate('/profile')}
               >
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
-                className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-300"
+                className="hover:shadow-lg dark:hover:shadow-gray-500/20 transition-all duration-300"
                 onClick={() => navigate('/profile?tab=preferences')}
               >
                 <Settings className="mr-2 h-4 w-4" />

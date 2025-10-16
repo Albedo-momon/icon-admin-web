@@ -58,14 +58,14 @@ export function PersonalInfo() {
     >
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-card-foreground">Personal Information</CardTitle>
-          <CardDescription className="text-muted-foreground">Update your personal details and contact information.</CardDescription>
+          <CardTitle className="text-text-heading">Personal Information</CardTitle>
+          <CardDescription>Update your personal details and contact information.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-card-foreground">Full Name</Label>
+                <Label htmlFor="fullName" className="text-text-body">Full Name</Label>
                 <Input
                   id="fullName"
                   value={formData.fullName}
@@ -74,7 +74,7 @@ export function PersonalInfo() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-card-foreground">Email</Label>
+                <Label htmlFor="email" className="text-text-body">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -84,7 +84,7 @@ export function PersonalInfo() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-card-foreground">Phone</Label>
+                <Label htmlFor="phone" className="text-text-body">Phone</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -93,7 +93,7 @@ export function PersonalInfo() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="company" className="text-card-foreground">Company</Label>
+                <Label htmlFor="company" className="text-text-body">Company</Label>
                 <Input
                   id="company"
                   value={formData.company}
@@ -102,7 +102,7 @@ export function PersonalInfo() {
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="location" className="text-card-foreground">Location</Label>
+                <Label htmlFor="location" className="text-text-body">Location</Label>
                 <Input
                   id="location"
                   value={formData.location}

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, ImageIcon, Loader2, RefreshCcw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,18 @@ import { toast } from "@/hooks/use-toast";
 import { BannerModal } from "@/components/admin/BannerModal";
 import { OfferModal } from "@/components/admin/OfferModal";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useSearchParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { http } from "@/api/client";
 
 export default function ManageUserApp() {
   const [activeTab, setActiveTab] = useState("banners");
   
-  const { banners, specialOffers, createBanner, updateBanner, deleteBanner, createOffer, updateOffer, deleteOffer } = useAdminStore();
+  const { banners, specialOffers, createBanner, updateBanner, deleteBanner, createOffer, updateOffer, deleteOffer, fetchBanners } = useAdminStore();
   
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [offerModalOpen, setOfferModalOpen] = useState(false);
@@ -23,6 +30,24 @@ export default function ManageUserApp() {
   const [editingOffer, setEditingOffer] = useState<Offer | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'banner' | 'offer'; id: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  // Filters & pagination state
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [status, setStatus] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [q, setQ] = useState<string>('');
+  const [limit, setLimit] = useState<number>(10);
+  const [offset, setOffset] = useState<number>(0);
+  const [total, setTotal] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  // In browser, setTimeout returns a number; using number avoids Node Timeout mismatch
+  const debounceRef = useRef<number | null>(null);
+  const queryClient = useQueryClient();
+
+  const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
+  const pageCount = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
 
   const calculateDiscount = (mrp: number, salePrice: number) => {
     return Math.round(((mrp - salePrice) / mrp) * 100);
@@ -38,13 +63,37 @@ export default function ManageUserApp() {
     setBannerModalOpen(true);
   };
 
-  const handleSaveBanner = (data: { title: string; imageUrl: string; isActive: boolean; validFrom?: string; validTo?: string }) => {
+  const handleSaveBanner = async (data: { title: string; imageUrl: string; status: string; sort: number }) => {
     if (editingBanner) {
-      updateBanner(editingBanner.id, data);
+      // Only send changed fields to PATCH
+      const updates: Partial<Banner> = {};
+      if (editingBanner.title !== data.title) updates.title = data.title;
+      const nextActive = data.status === "ACTIVE";
+      if (editingBanner.isActive !== nextActive) updates.isActive = nextActive;
+      if (editingBanner.sortOrder !== data.sort) updates.sortOrder = data.sort;
+      if (editingBanner.imageUrl !== data.imageUrl) updates.imageUrl = data.imageUrl;
+
+      // If nothing changed, skip server call but still toast success
+      if (Object.keys(updates).length > 0) {
+        updateBanner(editingBanner.id, updates);
+      }
       toast({ title: "Banner updated", description: "Hero banner has been updated successfully" });
+      setBannerModalOpen(false);
+      setEditingBanner(undefined);
+      await queryClient.invalidateQueries({ queryKey: ["heroBanners"] });
+      await queryClient.refetchQueries({ queryKey: ["heroBanners"], type: "active" });
     } else {
-      createBanner(data);
+      createBanner({
+        title: data.title,
+        imageUrl: data.imageUrl,
+        isActive: data.status === "ACTIVE",
+        sortOrder: data.sort,
+      });
       toast({ title: "Banner created", description: "New hero banner has been added" });
+      setBannerModalOpen(false);
+      setEditingBanner(undefined);
+      await queryClient.invalidateQueries({ queryKey: ["heroBanners"] });
+      await queryClient.refetchQueries({ queryKey: ["heroBanners"], type: "active" });
     }
   };
 
@@ -78,19 +127,143 @@ export default function ManageUserApp() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (!deleteTarget) return;
-    
-    if (deleteTarget.type === 'banner') {
-      deleteBanner(deleteTarget.id);
-      toast({ title: "Banner deleted", description: "Hero banner has been removed" });
-    } else {
-      deleteOffer(deleteTarget.id);
-      toast({ title: "Offer deleted", description: "Special offer has been removed" });
+  const listParams = useMemo(() => ({ status, limit, offset, sort: "createdAt:desc" }), [status, limit, offset]);
+  const listQuery = useQuery({
+    queryKey: ["heroBanners", listParams],
+    queryFn: async () => {
+      const resp = await fetchBanners({ status, q: q || undefined, limit, offset, orderBy: "sort" });
+      return { data: resp.items, total: resp.total, limit: resp.limit, offset: resp.offset };
+    },
+    enabled: activeTab === "banners",
+    staleTime: 30_000,
+  });
+
+  const handleHardRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await queryClient.invalidateQueries({ queryKey: ["heroBanners"] });
+      await listQuery.refetch();
+    } finally {
+      setRefreshing(false);
     }
-    
-    setDeleteDialogOpen(false);
-    setDeleteTarget(null);
+  };
+
+  useEffect(() => {
+    if (listQuery.data) {
+      setTotal(listQuery.data.total ?? 0);
+    }
+  }, [listQuery.data]);
+
+  useEffect(() => {
+    if (listQuery.error) {
+      const e: any = listQuery.error as any;
+      setError(e?.message || "Failed to fetch");
+    } else {
+      setError(null);
+    }
+  }, [listQuery.error]);
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await http.delete(`/admin/hero-banners/${id}`);
+      return data as { ok: boolean; id: string; s3Deleted?: boolean; s3DeleteError?: string };
+    },
+  });
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.type === "offer") {
+        deleteOffer(deleteTarget.id);
+        toast({ title: "Offer deleted", description: "Special offer has been removed" });
+        setDeleteDialogOpen(false);
+        setDeleteTarget(null);
+        return;
+      }
+      setDeletingId(deleteTarget.id);
+      const res = await deleteMutation.mutateAsync(deleteTarget.id);
+      if (res && res.ok) {
+        const detail = res.s3DeleteError ? String(res.s3DeleteError).slice(0, 120) : undefined;
+        if (res.s3Deleted) {
+          toast({ title: "Banner and image deleted.", description: detail });
+        } else {
+          toast({ title: "Banner removed. Image cleanup pending.", description: detail });
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: ["heroBanners"] });
+      const refetchResult = await listQuery.refetch();
+      const nextTotal = refetchResult.data?.total ?? 0;
+      const nextPageCount = Math.max(1, Math.ceil(nextTotal / limit));
+      const currPage = Math.floor(offset / limit) + 1;
+      if (currPage > nextPageCount) {
+        const newPage = nextPageCount;
+        const newOffset = Math.max(0, (newPage - 1) * limit);
+        setOffset(newOffset);
+        updateUrl({ status, q, limit, offset: newOffset });
+        await queryClient.invalidateQueries({ queryKey: ["heroBanners"] });
+        await listQuery.refetch();
+      }
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Delete failed. Try again.";
+      toast({ title: "Delete failed. Try again.", description: msg, variant: "destructive" });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // STEP 6 — Persist & Restore Filters
+  useEffect(() => {
+    const qpStatus = (searchParams.get("status") || "ALL").toUpperCase();
+    const qpPage = Number(searchParams.get("page") || "1");
+    const qpPageSize = Number(searchParams.get("pageSize") || "10");
+    const qpQ = searchParams.get("q") || "";
+    const validStatus: any = ["ALL", "ACTIVE", "INACTIVE"].includes(qpStatus) ? qpStatus : "ALL";
+    const validPageSize = [10, 20, 50].includes(qpPageSize) ? qpPageSize : 10;
+    const validPage = isNaN(qpPage) || qpPage < 1 ? 1 : qpPage;
+    const computedOffset = (validPage - 1) * validPageSize;
+    setStatus(validStatus);
+    setLimit(validPageSize);
+    setOffset(computedOffset);
+    setQ(qpQ);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Centralized fetchList using current state
+  const fetchList = async (_status: 'ALL' | 'ACTIVE' | 'INACTIVE' = status, _q: string = q, _limit: number = limit, _offset: number = offset) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await fetchBanners({ status: _status, q: _q || undefined, limit: _limit, offset: _offset, orderBy: 'sort' });
+      setTotal(resp.total ?? resp.items.length);
+      setLimit(resp.limit ?? _limit);
+      setOffset(resp.offset ?? _offset);
+      // If pagination gap, step back one page automatically
+      if (resp.items.length === 0 && (resp.total ?? 0) > 0 && _offset > 0) {
+        const newOffset = Math.max(0, _offset - _limit);
+        setOffset(newOffset);
+        updateUrl({ status: _status, q: _q, limit: _limit, offset: newOffset });
+        const again = await fetchBanners({ status: _status, q: _q || undefined, limit: _limit, offset: newOffset, orderBy: 'sort' });
+        setTotal(again.total ?? resp.total ?? 0);
+      }
+    } catch (e: any) {
+      console.error('Failed to fetch banners', e);
+      setError(e?.message || 'Failed to fetch');
+      toast({ title: 'Error', description: e?.message || 'Failed to load banners', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUrl = (next: { status: 'ALL' | 'ACTIVE' | 'INACTIVE'; q: string; limit: number; offset: number }) => {
+    const params: any = {};
+    if (next.status && next.status !== 'ALL') params.status = next.status;
+    if (next.q) params.q = next.q;
+    const nextPage = Math.floor(next.offset / next.limit) + 1;
+    params.page = String(nextPage);
+    params.pageSize = String(next.limit);
+    setSearchParams(params, { replace: true });
   };
 
   return (
@@ -110,20 +283,96 @@ export default function ManageUserApp() {
 
         {/* Hero Banners Tab */}
         <TabsContent value="banners" className="space-y-4">
-          <div className="flex justify-end">
-            <Button className="gap-2" onClick={handleNewBanner}>
-              <Plus className="w-4 h-4" />
-              New Banner
-            </Button>
+          {/* Toolbar: Status filter, Search, Pagination size, New Banner */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <ToggleGroup type="single" value={status} onValueChange={(val) => {
+                const next = (val || 'ALL') as 'ALL'|'ACTIVE'|'INACTIVE';
+                setStatus(next);
+                setOffset(0);
+                updateUrl({ status: next, q, limit, offset: 0 });
+                void fetchList(next, q, limit, 0);
+              }}>
+                <ToggleGroupItem value="ALL">All</ToggleGroupItem>
+                <ToggleGroupItem value="ACTIVE">Active</ToggleGroupItem>
+                <ToggleGroupItem value="INACTIVE">Inactive</ToggleGroupItem>
+              </ToggleGroup>
+              <div className="relative w-64">
+                <Input
+                  placeholder="Search title..."
+                  value={q}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setQ(val);
+                    if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
+                    debounceRef.current = window.setTimeout(() => {
+                      setOffset(0);
+                      updateUrl({ status, q: val, limit, offset: 0 });
+                      void fetchList(status, val, limit, 0);
+                    }, 400);
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Page size</span>
+                <Select
+                  value={String(limit)}
+                  onValueChange={(v) => {
+                    const next = Number(v);
+                    setLimit(next);
+                    setOffset(0);
+                    updateUrl({ status, q, limit: next, offset: 0 });
+                    void fetchList(status, q, next, 0);
+                  }}
+                >
+                  <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Refresh banners"
+                title="Refresh"
+                onClick={handleHardRefresh}
+              >
+                {refreshing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCcw className="w-4 h-4" />
+                )}
+              </Button>
+              <Button className="gap-2" onClick={handleNewBanner}>
+                <Plus className="w-4 h-4" />
+                New Banner
+              </Button>
+            </div>
           </div>
 
-          {banners.length === 0 ? (
+          {listQuery.isLoading ? (
+            <Card className="p-12">
+              <LoadingSpinner text="Loading banners..." />
+            </Card>
+          ) : error ? (
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="text-destructive">Failed to load list.</div>
+                <Button variant="outline" size="sm" onClick={() => listQuery.refetch()}>Retry</Button>
+              </div>
+            </Card>
+          ) : banners.length === 0 ? (
             <Card className="p-12">
               <div className="flex flex-col items-center justify-center text-center space-y-4">
                 <ImageIcon className="w-16 h-16 text-muted-foreground/50" />
                 <div>
-                  <h3 className="font-semibold text-lg">No banners yet</h3>
-                  <p className="text-muted-foreground text-sm">Click 'New Banner' to add one</p>
+                  <h3 className="font-semibold text-lg">{total === 0 ? 'No banners yet' : 'No banners match your filters'}</h3>
+                  <p className="text-muted-foreground text-sm">{total === 0 ? "Click 'New Banner' to add one" : 'Try adjusting filters or search'}</p>
                 </div>
               </div>
             </Card>
@@ -171,6 +420,7 @@ export default function ManageUserApp() {
                               variant="ghost" 
                               size="icon"
                               onClick={() => handleEditBanner(banner)}
+                              disabled={deletingId === banner.id}
                               aria-label={`Edit banner ${banner.title}`}
                             >
                               <Pencil className="w-4 h-4" />
@@ -180,9 +430,14 @@ export default function ManageUserApp() {
                               variant="ghost" 
                               size="icon"
                               onClick={() => handleDeleteBanner(banner.id)}
+                              disabled={deletingId === banner.id}
                               aria-label={`Delete banner ${banner.title}`}
                             >
-                              <Trash2 className="w-4 h-4 text-destructive" />
+                              {deletingId === banner.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                              ) : (
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              )}
                               <span className="sr-only">Delete</span>
                             </Button>
                           </div>
@@ -191,6 +446,38 @@ export default function ManageUserApp() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+              {/* Pagination footer */}
+              <div className="flex items-center justify-between px-4 py-3 border-t">
+                <div className="text-sm text-muted-foreground">Total: {total} • Page {currentPage} / {pageCount}</div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={offset === 0}
+                    onClick={() => {
+                      const nextOffset = Math.max(0, offset - limit);
+                      setOffset(nextOffset);
+                      updateUrl({ status, q, limit, offset: nextOffset });
+                      void listQuery.refetch();
+                    }}
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={offset + limit >= total}
+                    onClick={() => {
+                      const nextOffset = offset + limit;
+                      setOffset(nextOffset);
+                      updateUrl({ status, q, limit, offset: nextOffset });
+                      void listQuery.refetch();
+                    }}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             </Card>
           )}
@@ -297,6 +584,8 @@ export default function ManageUserApp() {
             ? "This will remove the banner from Home. You can't undo."
             : "This will remove the special offer. You can't undo."
         }
+        isLoading={deleteMutation.isPending}
+        loadingText={deleteTarget?.type === 'banner' ? 'Deleting banner and image...' : 'Deleting offer...'}
         onConfirm={confirmDelete}
       />
     </div>

@@ -10,7 +10,7 @@ const navItems = [
 
 export function AdminSidebar() {
   return (
-    <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-screen sticky top-0">
+    <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-screen sticky top-0 border-r border-gray-400 dark:border-gray-600">
       {/* Logo */}
       <div className="p-6 flex items-center gap-3">
         <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
@@ -32,7 +32,7 @@ export function AdminSidebar() {
               cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
                 isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )
             }

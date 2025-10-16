@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { env } from '@/env';
+import { http } from '@/api/client';
 
 export type Banner = {
   id: string;
@@ -43,10 +45,11 @@ interface AdminStore {
   agents: Agent[];
   
   // Banner methods
-  createBanner: (banner: Omit<Banner, 'id' | 'sortOrder' | 'updatedAt'>) => void;
+  createBanner: (banner: Omit<Banner, 'id' | 'updatedAt'>) => void;
   updateBanner: (id: string, banner: Partial<Banner>) => void;
   deleteBanner: (id: string) => void;
   reorderBanners: (banners: Banner[]) => void;
+  fetchBanners: (params?: { status?: 'ACTIVE' | 'INACTIVE' | 'ALL'; q?: string; limit?: number; offset?: number; orderBy?: string }) => Promise<{ items: Banner[]; total: number; limit: number; offset: number }>;
   
   // Offer methods
   createOffer: (offer: Omit<Offer, 'id' | 'sortOrder' | 'updatedAt'>) => void;
@@ -69,7 +72,7 @@ const renormalizeSortOrder = <T extends { sortOrder: number }>(items: T[]): T[] 
 export const useAdminStore = create<AdminStore>()(
   persist(
     (set) => ({
-      banners: [
+      banners: env.useMock ? [
         {
           id: '1',
           title: 'Summer Sale',
@@ -86,7 +89,7 @@ export const useAdminStore = create<AdminStore>()(
           sortOrder: 2,
           updatedAt: '2025-10-08',
         },
-      ],
+      ] : [],
       specialOffers: [
         {
           id: '1',
@@ -114,30 +117,122 @@ export const useAdminStore = create<AdminStore>()(
       // Banner methods
       createBanner: (banner) =>
         set((state) => {
-          const maxSort = Math.max(0, ...state.banners.map((b) => b.sortOrder));
           const newBanner: Banner = {
             ...banner,
             id: Date.now().toString(),
-            sortOrder: maxSort + 1,
+            sortOrder: banner.sortOrder || Math.max(0, ...state.banners.map((b) => b.sortOrder)) + 1,
             updatedAt: new Date().toISOString().split('T')[0],
           };
           return { banners: [...state.banners, newBanner] };
         }),
       
-      updateBanner: (id, updates) =>
-        set((state) => ({
-          banners: state.banners.map((b) =>
-            b.id === id ? { ...b, ...updates, updatedAt: new Date().toISOString().split('T')[0] } : b
-          ),
-        })),
+      updateBanner: (id, updates) => {
+        if (env.useMock) {
+          set((state) => ({
+            banners: state.banners.map((b) =>
+              b.id === id ? { ...b, ...updates, updatedAt: new Date().toISOString().split('T')[0] } : b
+            ),
+          }));
+          return;
+        }
+        const body: any = {};
+        if (typeof updates.title !== 'undefined') body.title = updates.title;
+        if (typeof updates.isActive !== 'undefined') body.status = updates.isActive ? 'ACTIVE' : 'INACTIVE';
+        if (typeof updates.sortOrder !== 'undefined') body.sort = updates.sortOrder;
+        if (typeof updates.imageUrl !== 'undefined') body.imageUrl = updates.imageUrl;
+        http.patch(`/admin/hero-banners/${id}`, body)
+          .then(() => {
+            set((state) => ({
+              banners: state.banners.map((b) =>
+                b.id === id ? { ...b, ...updates, updatedAt: new Date().toISOString().split('T')[0] } : b
+              ),
+            }));
+          })
+          .catch((e) => {
+            console.error('Failed to patch banner', e);
+          });
+      },
       
-      deleteBanner: (id) =>
+      deleteBanner: (id) => {
+        if (!env.useMock) {
+          http.delete(`/admin/hero-banners/${id}`).catch((e) => {
+            console.error('Failed to delete banner', e);
+            // still update UI optimistically
+          });
+        }
         set((state) => ({
           banners: renormalizeSortOrder(state.banners.filter((b) => b.id !== id)),
-        })),
+        }));
+      },
       
       reorderBanners: (banners) =>
         set({ banners: renormalizeSortOrder(banners) }),
+      
+      fetchBanners: async (params = { status: 'ACTIVE', limit: 20, offset: 0, orderBy: 'sort' }) => {
+        if (env.useMock) {
+          const mock: Banner[] = [
+            {
+              id: '1',
+              title: 'Summer Sale',
+              imageUrl: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800',
+              isActive: true,
+              sortOrder: 1,
+              updatedAt: '2025-10-10',
+            },
+            {
+              id: '2',
+              title: 'New Laptop Collection',
+              imageUrl: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800',
+              isActive: true,
+              sortOrder: 2,
+              updatedAt: '2025-10-08',
+            },
+          ];
+          const normalizedMock = renormalizeSortOrder(mock);
+          const limit = params.limit ?? 20;
+          const offset = params.offset ?? 0;
+          const pageItems = normalizedMock.slice(offset, offset + limit);
+          set({ banners: pageItems });
+          return { items: pageItems, total: normalizedMock.length, limit, offset };
+        }
+        const queryParams: any = { limit: params.limit ?? 20, offset: params.offset ?? 0, orderBy: params.orderBy ?? 'sort' };
+        if (params.status && params.status !== 'ALL') queryParams.status = params.status;
+        if (params.q) queryParams.q = params.q;
+
+        const { data } = await http.get('/admin/hero-banners', { params: queryParams });
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray((data as any)?.items)
+            ? (data as any).items
+            : Array.isArray((data as any)?.results)
+              ? (data as any).results
+              : [];
+
+        const normalizeDate = (value: any): string => {
+          const d = new Date(value ?? Date.now());
+          return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
+        };
+
+        const normalized: Banner[] = list.map((b: any) => ({
+          id: String(b.id ?? b.bannerId ?? b.uuid ?? Date.now()),
+          title: b.title ?? b.name ?? 'Untitled',
+          imageUrl: b.imageUrl ?? b.image ?? b.pictureUrl ?? '',
+          isActive: typeof b.isActive === 'boolean' ? b.isActive : String(b.status ?? '').toUpperCase() === 'ACTIVE',
+          sortOrder: Number(b.sortOrder ?? b.sort ?? b.order ?? 0),
+          updatedAt: normalizeDate(b.updatedAt ?? b.updated_at ?? b.modifiedAt ?? b.lastUpdated),
+          targetType: (b.targetType ?? 'none') as Banner['targetType'],
+          targetUrl: b.targetUrl ?? b.link ?? undefined,
+        }));
+
+        const normalizedList = renormalizeSortOrder(normalized);
+        set({ banners: normalizedList });
+
+        const meta = typeof data === 'object' && data !== null ? (data as any) : {};
+        const total: number = Number(meta.total ?? normalizedList.length);
+        const limit: number = Number(meta.limit ?? queryParams.limit ?? 20);
+        const offset: number = Number(meta.offset ?? queryParams.offset ?? 0);
+        return { items: normalizedList, total, limit, offset };
+      },
       
       // Offer methods
       createOffer: (offer) =>
