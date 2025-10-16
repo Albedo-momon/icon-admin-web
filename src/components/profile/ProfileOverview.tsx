@@ -86,7 +86,7 @@ export function ProfileOverview() {
                   <div>
                     <dt className="text-xs text-text-muted">Role</dt>
                     <dd className="text-sm text-text-body font-medium">
-                      <Badge variant="secondary" className="bg-gradient-primary text-black">Admin</Badge>
+                      <Badge variant="secondary" className="bg-gradient-primary text-foreground">Admin</Badge>
                     </dd>
                   </div>
                 </div>
