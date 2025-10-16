@@ -65,18 +65,18 @@ export function ProfileOverview() {
             {/* Info Section */}
             <div className="flex-1 space-y-4">
               <div>
-                <h2 className="text-2xl font-bold text-card-foreground">
+                <h2 className="text-2xl font-bold text-text-heading">
                   {user?.name || 'Admin User'}
                 </h2>
-                <p className="text-muted-foreground">Senior Administrator</p>
+                <p className="text-text-muted">Senior Administrator</p>
               </div>
 
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-info" />
                   <div>
-                    <dt className="text-xs text-muted-foreground">Email</dt>
-                    <dd className="text-sm text-card-foreground font-medium">
+                    <dt className="text-xs text-text-muted">Email</dt>
+                    <dd className="text-sm text-text-body font-medium">
                       {user?.email || 'admin@example.com'}
                     </dd>
                   </div>
@@ -84,24 +84,24 @@ export function ProfileOverview() {
                 <div className="flex items-center gap-2">
                   <Briefcase className="h-4 w-4 text-info" />
                   <div>
-                    <dt className="text-xs text-muted-foreground">Role</dt>
-                    <dd className="text-sm text-card-foreground font-medium">
-                      <Badge variant="secondary" className="bg-gradient-primary text-white">Admin</Badge>
+                    <dt className="text-xs text-text-muted">Role</dt>
+                    <dd className="text-sm text-text-body font-medium">
+                      <Badge variant="secondary" className="bg-gradient-primary text-black">Admin</Badge>
                     </dd>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-info" />
                   <div>
-                    <dt className="text-xs text-muted-foreground">Location</dt>
-                    <dd className="text-sm text-card-foreground font-medium">San Francisco, CA</dd>
+                    <dt className="text-xs text-text-muted">Location</dt>
+                    <dd className="text-sm text-text-body font-medium">San Francisco, CA</dd>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-info" />
                   <div>
-                    <dt className="text-xs text-muted-foreground">Member Since</dt>
-                    <dd className="text-sm text-card-foreground font-medium">January 2024</dd>
+                    <dt className="text-xs text-text-muted">Member Since</dt>
+                    <dd className="text-sm text-text-body font-medium">January 2024</dd>
                   </div>
                 </div>
               </dl>
