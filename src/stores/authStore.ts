@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Clerk } from '@clerk/clerk-js';
+import { performHandshake, getUserProfile, clearHandshakeCache } from '../services/authService';
+import { UserProfile } from '../api/client';
+import { getJWTToken } from '../services/jwtService';
 
 // Initialize Clerk
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -24,6 +27,7 @@ interface User {
   name: string;
   email: string;
   phone?: string;
+  role?: string;
 }
 
 interface AuthState {
@@ -32,12 +36,14 @@ interface AuthState {
   isLoading: boolean;
   hasInitialized: boolean;
   rememberMe: boolean;
+  userProfile: UserProfile | null;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   verifyEmail: (code: string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   logout: () => Promise<void>;
   initializeAuth: () => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
 }
 
 // Helper function to convert Clerk user to our User interface
@@ -48,6 +54,15 @@ const convertClerkUser = (clerkUser: any): User => ({
   phone: clerkUser.primaryPhoneNumber?.phoneNumber,
 });
 
+// Helper function to convert UserProfile to User with role
+const convertUserProfileToUser = (userProfile: UserProfile, clerkUser: any): User => ({
+  id: clerkUser.id,
+  name: clerkUser.fullName || clerkUser.firstName || 'User',
+  email: clerkUser.primaryEmailAddress?.emailAddress || '',
+  phone: clerkUser.primaryPhoneNumber?.phoneNumber,
+  role: userProfile.role,
+});
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -56,6 +71,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
       hasInitialized: false,
       rememberMe: false,
+      userProfile: null,
       
       initializeAuth: async () => {
         console.log('AuthStore - Starting auth initialization, isLoading:', get().isLoading);
@@ -88,15 +104,29 @@ export const useAuthStore = create<AuthState>()(
           if (userData) {
             console.log('AuthStore - User found after initialization, setting authenticated');
             const user = convertClerkUser(userData);
-            set({ user, isAuthenticated: true, isLoading: false, hasInitialized: true });
+            
+            // Try to perform handshake to sync with backend
+            try {
+              console.log('AuthStore - Attempting handshake during initialization');
+              const userProfile = await performHandshake();
+              console.log('AuthStore - Handshake successful during initialization:', userProfile);
+              
+              // Enrich user with role from backend
+              const enrichedUser = convertUserProfileToUser(userProfile, userData);
+              set({ user: enrichedUser, userProfile, isAuthenticated: true, isLoading: false, hasInitialized: true });
+            } catch (handshakeError) {
+              console.warn('AuthStore - Handshake failed during initialization:', handshakeError);
+              // Still set user as authenticated even if handshake fails
+              set({ user, userProfile: null, isAuthenticated: true, isLoading: false, hasInitialized: true });
+            }
           } else {
             console.log('AuthStore - No user after retries, setting unauthenticated');
-            set({ user: null, isAuthenticated: false, isLoading: false, hasInitialized: true });
+            set({ user: null, userProfile: null, isAuthenticated: false, isLoading: false, hasInitialized: true });
             localStorage.removeItem('auth-storage');
           }
         } catch (error) {
           console.error('Auth initialization error:', error);
-          set({ user: null, isAuthenticated: false, isLoading: false, hasInitialized: true });
+          set({ user: null, userProfile: null, isAuthenticated: false, isLoading: false, hasInitialized: true });
           // Clear localStorage on error to prevent stale data
           localStorage.removeItem('auth-storage');
         }
@@ -143,10 +173,36 @@ export const useAuthStore = create<AuthState>()(
             const user = convertClerkUser(userData);
             console.log('Converted user:', user);
             
+            // Log JWT token for debugging
+            try {
+              const jwtToken = await getJWTToken();
+              console.log('🔑 JWT Bearer Token:', `Bearer ${jwtToken}`);
+              console.log('🔑 JWT Token Details:', {
+                template: 'icon-admin-api',
+                length: jwtToken.length,
+                preview: jwtToken.substring(0, 50) + '...'
+              });
+            } catch (jwtError) {
+              console.warn('Failed to get JWT token:', jwtError);
+            }
+            
             // Set flag to indicate user just logged in
             sessionStorage.setItem('justLoggedIn', 'true');
             
-            set({ user, isAuthenticated: true, rememberMe: rememberMe || false });
+            // Try to perform handshake to sync with backend
+            try {
+              console.log('AuthStore - Attempting handshake after login');
+              const userProfile = await performHandshake();
+              console.log('AuthStore - Handshake successful after login:', userProfile);
+              
+              // Enrich user with role from backend
+              const enrichedUser = convertUserProfileToUser(userProfile, userData);
+              set({ user: enrichedUser, userProfile, isAuthenticated: true, rememberMe: rememberMe || false });
+            } catch (handshakeError) {
+              console.warn('AuthStore - Handshake failed after login:', handshakeError);
+              // Still set user as authenticated even if handshake fails
+              set({ user, userProfile: null, isAuthenticated: true, rememberMe: rememberMe || false });
+            }
           } else {
             // Handle cases where additional verification is needed
             throw new Error('Sign in requires additional verification');
@@ -332,13 +388,37 @@ export const useAuthStore = create<AuthState>()(
         try {
           const clerkInstance = await initializeClerk();
           await clerkInstance.signOut();
+          
+          // Clear handshake cache
+          clearHandshakeCache();
+          
           // Clear localStorage and sessionStorage
           localStorage.removeItem('auth-storage');
           sessionStorage.removeItem('lastRoute');
           
-          set({ user: null, isAuthenticated: false, rememberMe: false, hasInitialized: true });
+          set({ user: null, userProfile: null, isAuthenticated: false, rememberMe: false, hasInitialized: true });
         } catch (error) {
           console.error('Logout error:', error);
+        }
+      },
+      
+      refreshUserProfile: async () => {
+        try {
+          const userProfile = await getUserProfile();
+          const currentUser = get().user;
+          
+          if (currentUser && userProfile) {
+            // Update user with new role information
+            const clerkInstance = await initializeClerk();
+            const userData = clerkInstance.user;
+            
+            if (userData) {
+              const enrichedUser = convertUserProfileToUser(userProfile, userData);
+              set({ user: enrichedUser, userProfile });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to refresh user profile:', error);
         }
       },
     }),

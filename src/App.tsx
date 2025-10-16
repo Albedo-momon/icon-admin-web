@@ -33,7 +33,7 @@ const queryClient = new QueryClient({
 // Component to handle login redirect logic
 const LoginRedirect = () => {
   const { isAuthenticated, isLoading, hasInitialized, initializeAuth } = useAuthStore();
-
+  
   useEffect(() => {
     // Initialize auth to check if user is already authenticated (e.g., after password reset)
     initializeAuth();
@@ -47,11 +47,11 @@ const LoginRedirect = () => {
       </div>
     );
   }
-
+  
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
-
+  
   return <Login />;
 };
 

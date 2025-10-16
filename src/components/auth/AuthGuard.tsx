@@ -8,11 +8,11 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, isLoading, hasInitialized } = useAuthStore();
+  const { isAuthenticated, isLoading, hasInitialized, userProfile } = useAuthStore();
   const location = useLocation();
 
   // Debug logging
-  console.log('AuthGuard - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
+  console.log('AuthGuard - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'userProfile:', userProfile);
 
   useEffect(() => {
     // Store the current route in sessionStorage if user is not authenticated
