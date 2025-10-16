@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from
 import { AdminLayout } from "./components/layout/AdminLayout";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import { useAuthStore } from "./stores/authStore";
+import { LoadingSpinner } from "./components/ui/loading-spinner";
 import Dashboard from "./pages/Dashboard";
 import ManageUserApp from "./pages/ManageUserApp";
 import ManageAgentApp from "./pages/ManageAgentApp";
@@ -31,17 +32,26 @@ const queryClient = new QueryClient({
 
 // Component to handle login redirect logic
 const LoginRedirect = () => {
-  const { isAuthenticated, initializeAuth } = useAuthStore();
-  
+  const { isAuthenticated, isLoading, hasInitialized, initializeAuth } = useAuthStore();
+
   useEffect(() => {
     // Initialize auth to check if user is already authenticated (e.g., after password reset)
     initializeAuth();
   }, [initializeAuth]);
-  
+
+  // Show loading screen while authentication is being verified or not initialized yet
+  if (isLoading || !hasInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <LoadingSpinner size="lg" text="Verifying authentication..." />
+      </div>
+    );
+  }
+
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
-  
+
   return <Login />;
 };
 

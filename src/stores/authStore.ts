@@ -30,6 +30,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasInitialized: boolean;
   rememberMe: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
@@ -53,6 +54,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: true,
+      hasInitialized: false,
       rememberMe: false,
       
       initializeAuth: async () => {
@@ -65,22 +67,36 @@ export const useAuthStore = create<AuthState>()(
           // Initialize Clerk first
           const clerkInstance = await initializeClerk();
           
-          // Check if user is already signed in with Clerk
-          if (clerkInstance.user) {
-            console.log('AuthStore - User found in Clerk, setting authenticated');
-            const user = convertClerkUser(clerkInstance.user);
-            set({ user, isAuthenticated: true, isLoading: false });
+          // Try multiple times to allow Clerk to fully hydrate the session
+          let userData = clerkInstance.user;
+          if (!userData) {
+            // Ensure Clerk is loaded
+            await clerkInstance.load();
+            userData = clerkInstance.user;
+          }
+
+          // Retry a few times with small delay if user is still not available
+          let attempts = 0;
+          const maxAttempts = 4; // ~600ms total wait
+          while (!userData && attempts < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            await clerkInstance.load();
+            userData = clerkInstance.user;
+            attempts += 1;
+          }
+
+          if (userData) {
+            console.log('AuthStore - User found after initialization, setting authenticated');
+            const user = convertClerkUser(userData);
+            set({ user, isAuthenticated: true, isLoading: false, hasInitialized: true });
           } else {
-            console.log('AuthStore - No user found in Clerk, setting unauthenticated');
-            // Clear any persisted authentication state when no active session
-            set({ user: null, isAuthenticated: false, isLoading: false });
-            
-            // Clear localStorage if no active session to prevent stale data
+            console.log('AuthStore - No user after retries, setting unauthenticated');
+            set({ user: null, isAuthenticated: false, isLoading: false, hasInitialized: true });
             localStorage.removeItem('auth-storage');
           }
         } catch (error) {
           console.error('Auth initialization error:', error);
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          set({ user: null, isAuthenticated: false, isLoading: false, hasInitialized: true });
           // Clear localStorage on error to prevent stale data
           localStorage.removeItem('auth-storage');
         }
@@ -320,7 +336,7 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem('auth-storage');
           sessionStorage.removeItem('lastRoute');
           
-          set({ user: null, isAuthenticated: false, rememberMe: false });
+          set({ user: null, isAuthenticated: false, rememberMe: false, hasInitialized: true });
         } catch (error) {
           console.error('Logout error:', error);
         }
@@ -340,6 +356,7 @@ export const useAuthStore = create<AuthState>()(
           state.isLoading = true;
           // Don't trust the persisted authentication state until verified
           state.isAuthenticated = false;
+          state.hasInitialized = false;
         }
       },
     }

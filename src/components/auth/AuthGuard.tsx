@@ -8,7 +8,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, hasInitialized } = useAuthStore();
   const location = useLocation();
 
   // Debug logging
@@ -21,8 +21,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
   }, [isAuthenticated, isLoading, location.pathname]);
 
-  // Show loading state while authentication is being checked
-  if (isLoading) {
+  // Show loading state while authentication is being checked or not initialized yet
+  if (isLoading || !hasInitialized) {
     console.log('AuthGuard - Showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
