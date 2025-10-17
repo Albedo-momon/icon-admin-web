@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Offer } from "@/store/adminStore";
+import type { Offer } from "@/store/adminStore";
 
 const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
 
@@ -32,7 +32,13 @@ const offerSchema = z.object({
 }).refine((data) => data.sale < data.mrp, {
   message: "Sale price must be less than MRP",
   path: ["sale"],
-});
+}) as z.ZodType<{
+  title: string;
+  image: FileList;
+  mrp: number;
+  sale: number;
+  isActive: boolean;
+}>;
 
 type OfferFormData = z.infer<typeof offerSchema>;
 
@@ -55,7 +61,7 @@ export function OfferModal({ open, onOpenChange, onSave, offer }: OfferModalProp
     reset,
     setValue,
   } = useForm<OfferFormData>({
-    resolver: zodResolver(offerSchema),
+    resolver: zodResolver(offerSchema as any),
     defaultValues: {
       title: offer?.title || "",
       mrp: offer?.mrp || 0,
@@ -161,7 +167,7 @@ export function OfferModal({ open, onOpenChange, onSave, offer }: OfferModalProp
             />
             {errors.image && (
               <p id="image-error" className="text-sm text-destructive">
-                {errors.image.message}
+                {errors.image.message as string}
               </p>
             )}
           </div>
@@ -206,7 +212,7 @@ export function OfferModal({ open, onOpenChange, onSave, offer }: OfferModalProp
             />
             {errors.title && (
               <p id="title-error" className="text-sm text-destructive">
-                {errors.title.message}
+                {errors.title.message as string}
               </p>
             )}
           </div>
@@ -222,10 +228,10 @@ export function OfferModal({ open, onOpenChange, onSave, offer }: OfferModalProp
                 aria-describedby={errors.mrp ? "mrp-error" : undefined}
               />
               {errors.mrp && (
-                <p id="mrp-error" className="text-sm text-destructive">
-                  {errors.mrp.message}
-                </p>
-              )}
+              <p id="mrp-error" className="text-sm text-destructive">
+                {errors.mrp.message as string}
+              </p>
+            )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="sale">Sale Price *</Label>
@@ -237,10 +243,10 @@ export function OfferModal({ open, onOpenChange, onSave, offer }: OfferModalProp
                 aria-describedby={errors.sale ? "sale-error" : undefined}
               />
               {errors.sale && (
-                <p id="sale-error" className="text-sm text-destructive">
-                  {errors.sale.message}
-                </p>
-              )}
+              <p id="sale-error" className="text-sm text-destructive">
+                {errors.sale.message as string}
+              </p>
+            )}
             </div>
           </div>
 

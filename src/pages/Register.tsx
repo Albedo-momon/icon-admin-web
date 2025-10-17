@@ -68,7 +68,6 @@ const Register = () => {
 
   // Real-time validation
   const {
-    getFieldValidation,
     isFieldValid,
     isFieldValidating,
   } = useRealTimeValidation({

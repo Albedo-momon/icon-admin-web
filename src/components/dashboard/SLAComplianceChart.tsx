@@ -36,7 +36,7 @@ export function SLAComplianceChart() {
               verticalAlign="bottom"
               height={36}
               iconType="square"
-              formatter={(value, entry: any) => (
+              formatter={(value) => (
                 <span className="text-sm font-medium">{value}</span>
               )}
             />

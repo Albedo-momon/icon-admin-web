@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AdminLayout } from "./components/layout/AdminLayout";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import { AdminGuard } from "./components/auth/AdminGuard";
@@ -20,8 +20,8 @@ import ForgotPasswordVerify from "./pages/ForgotPasswordVerify";
 import ForgotPasswordReset from "./pages/ForgotPasswordReset";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
-import { useEffect, useCallback } from "react";
-import { toast } from "sonner";
+import { useEffect } from "react";
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -101,33 +101,7 @@ const LoginRedirect = () => {
   return <Login />;
 };
 
-// Component to handle successful login redirect - only for authenticated routes
-const LoginSuccessHandler = () => {
-  const { isAuthenticated } = useAuthStore();
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    if (isAuthenticated) {
-      const lastRoute = sessionStorage.getItem('lastRoute');
-      const justLoggedIn = sessionStorage.getItem('justLoggedIn');
-      
-      // Only show toast and redirect if user just logged in
-      if (justLoggedIn === 'true') {
-        sessionStorage.removeItem('justLoggedIn');
-        
-        if (lastRoute && lastRoute !== '/login') {
-          sessionStorage.removeItem('lastRoute');
-          navigate(lastRoute, { replace: true });
-        } else {
-          navigate('/', { replace: true });
-        }
-        toast.success('Login successful!');
-      }
-    }
-  }, [isAuthenticated, navigate]);
-  
-  return null;
-};
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

@@ -1,4 +1,5 @@
-import { api, UserProfile } from '../api/client';
+import { api } from '../api/client';
+import type { UserProfile } from '../api/client';
 
 // In-memory cache to track handshake status per user
 const handshakeCache = new Map<string, boolean>();

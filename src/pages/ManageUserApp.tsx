@@ -22,7 +22,7 @@ import { http } from "@/api/client";
 export default function ManageUserApp() {
   const [activeTab, setActiveTab] = useState("banners");
   
-  const { banners, specialOffers, createBanner, updateBanner, deleteBanner, createOffer, updateOffer, deleteOffer, fetchBanners } = useAdminStore();
+  const { banners, specialOffers, createBanner, updateBanner, createOffer, updateOffer, deleteOffer, fetchBanners } = useAdminStore();
   
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [offerModalOpen, setOfferModalOpen] = useState(false);
@@ -40,7 +40,7 @@ export default function ManageUserApp() {
   const [limit, setLimit] = useState<number>(10);
   const [offset, setOffset] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   // In browser, setTimeout returns a number; using number avoids Node Timeout mismatch
   const debounceRef = useRef<number | null>(null);

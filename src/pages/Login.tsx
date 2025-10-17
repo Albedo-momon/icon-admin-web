@@ -38,7 +38,7 @@ const Login = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     control,
     watch,
   } = useForm<LoginFormData>({
@@ -50,7 +50,6 @@ const Login = () => {
 
   // Real-time validation
   const {
-    getFieldValidation,
     isFieldValid,
     isFieldValidating,
   } = useRealTimeValidation({
