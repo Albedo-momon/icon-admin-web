@@ -10,6 +10,7 @@ import type { Banner, Offer } from "@/store/adminStore";
 import { toast } from "@/hooks/use-toast";
 import { BannerModal } from "@/components/admin/BannerModal";
 import { OfferModal } from "@/components/admin/OfferModal";
+import { LaptopOfferModal } from "@/components/admin/LaptopOfferModal";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,14 +23,27 @@ import { http } from "@/api/client";
 export default function ManageUserApp() {
   const [activeTab, setActiveTab] = useState("banners");
   
-  const { banners, specialOffers, createBanner, updateBanner, createOffer, updateOffer, deleteOffer, fetchBanners } = useAdminStore();
+  const banners = useAdminStore(s => s.banners);
+  const specialOffers = useAdminStore(s => s.specialOffers);
+  const laptopOffers = useAdminStore(s => s.laptopOffers);
+  const createBanner = useAdminStore(s => s.createBanner);
+  const updateBanner = useAdminStore(s => s.updateBanner);
+  const createOffer = useAdminStore(s => s.createOffer);
+  const updateOffer = useAdminStore(s => s.updateOffer);
+  const deleteOffer = useAdminStore(s => s.deleteOffer);
+  const createLaptopOffer = useAdminStore(s => s.createLaptopOffer);
+  const updateLaptopOffer = useAdminStore(s => s.updateLaptopOffer);
+  const deleteLaptopOffer = useAdminStore(s => s.deleteLaptopOffer);
+  const fetchBanners = useAdminStore(s => s.fetchBanners);
   
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [laptopOfferModalOpen, setLaptopOfferModalOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | undefined>();
   const [editingOffer, setEditingOffer] = useState<Offer | undefined>();
+  const [editingLaptopOffer, setEditingLaptopOffer] = useState<any | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ type: 'banner' | 'offer'; id: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'banner' | 'offer' | 'laptop'; id: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
@@ -127,6 +141,61 @@ export default function ManageUserApp() {
     setDeleteDialogOpen(true);
   };
 
+  const handleNewLaptopOffer = () => {
+    setEditingLaptopOffer(undefined);
+    setLaptopOfferModalOpen(true);
+  };
+
+  const handleEditLaptopOffer = (laptopOffer: any) => {
+    setEditingLaptopOffer(laptopOffer);
+    setLaptopOfferModalOpen(true);
+  };
+
+  const handleSaveLaptopOffer = (data: any) => {
+    const s = useAdminStore.getState();
+    if (editingLaptopOffer) {
+      if (typeof s.updateLaptopOffer === 'function') {
+        s.updateLaptopOffer(editingLaptopOffer.id, data);
+      } else {
+        useAdminStore.setState((state) => {
+          const current = Array.isArray(state.laptopOffers) ? state.laptopOffers : [];
+          return {
+            laptopOffers: current.map((o) => (
+              o.id === editingLaptopOffer.id
+                ? { ...o, ...data, updatedAt: new Date().toISOString().split('T')[0] }
+                : o
+            )),
+          };
+        });
+      }
+      toast({ title: "Laptop offer updated", description: "Laptop offer has been updated successfully" });
+    } else {
+      if (typeof s.createLaptopOffer === 'function') {
+        s.createLaptopOffer(data);
+      } else {
+        useAdminStore.setState((state) => {
+          const current = Array.isArray(state.laptopOffers) ? state.laptopOffers : [];
+          const maxSort = current.length ? Math.max(...current.map(o => o.sortOrder || 0), 0) : 0;
+          const newOffer = {
+            ...data,
+            id: Date.now().toString(),
+            sortOrder: maxSort + 1,
+            updatedAt: new Date().toISOString().split('T')[0],
+          };
+          return { laptopOffers: [...current, newOffer] };
+        });
+      }
+      toast({ title: "Laptop offer created", description: "New laptop offer has been added" });
+    }
+    setLaptopOfferModalOpen(false);
+    setEditingLaptopOffer(undefined);
+  };
+
+  const handleDeleteLaptopOffer = (id: string) => {
+    setDeleteTarget({ type: 'laptop', id });
+    setDeleteDialogOpen(true);
+  };
+
   const listParams = useMemo(() => ({ status, limit, offset, sort: "createdAt:desc" }), [status, limit, offset]);
   const listQuery = useQuery({
     queryKey: ["heroBanners", listParams],
@@ -176,6 +245,20 @@ export default function ManageUserApp() {
       if (deleteTarget.type === "offer") {
         deleteOffer(deleteTarget.id);
         toast({ title: "Offer deleted", description: "Special offer has been removed" });
+        setDeleteDialogOpen(false);
+        setDeleteTarget(null);
+        return;
+      }
+      if (deleteTarget.type === "laptop") {
+        const s = useAdminStore.getState();
+        if (typeof s.deleteLaptopOffer === 'function') {
+          await s.deleteLaptopOffer(deleteTarget.id);
+        } else {
+          useAdminStore.setState((state) => ({
+            laptopOffers: (Array.isArray(state.laptopOffers) ? state.laptopOffers : []).filter((o) => o.id !== deleteTarget.id)
+          }));
+        }
+        toast({ title: "Laptop offer deleted", description: "Laptop offer has been removed" });
         setDeleteDialogOpen(false);
         setDeleteTarget(null);
         return;
@@ -279,6 +362,7 @@ export default function ManageUserApp() {
         <TabsList>
           <TabsTrigger value="banners">Hero Banners</TabsTrigger>
           <TabsTrigger value="offers">Special Offers</TabsTrigger>
+          <TabsTrigger value="laptops">Laptop Offers</TabsTrigger>
         </TabsList>
 
         {/* Hero Banners Tab */}
@@ -559,6 +643,89 @@ export default function ManageUserApp() {
             </div>
           )}
         </TabsContent>
+
+        {/* Laptop Offers Tab */}
+        <TabsContent value="laptops" className="space-y-4">
+          <div className="flex justify-end">
+            <Button className="gap-2" onClick={handleNewLaptopOffer}>
+              <Plus className="w-4 h-4" />
+              New Laptop Offer
+            </Button>
+          </div>
+
+          {(laptopOffers || []).length === 0 ? (
+            <Card className="p-12">
+              <div className="flex flex-col items-center justify-center text-center space-y-4">
+                <ImageIcon className="w-16 h-16 text-muted-foreground/50" />
+                <div>
+                  <h3 className="font-semibold text-lg">No laptop offers yet</h3>
+                  <p className="text-muted-foreground text-sm">Click 'New Laptop Offer' to add one</p>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {(laptopOffers || []).map((laptopOffer, index) => (
+                <motion.div
+                  key={laptopOffer.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="overflow-hidden">
+                    <div className="aspect-video relative">
+                      <img
+                        src={laptopOffer.imageUrl}
+                        alt={laptopOffer.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
+                        {calculateDiscount(laptopOffer.mrp, laptopOffer.sale)}% OFF
+                      </Badge>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <h3 className="font-semibold text-lg line-clamp-2">{laptopOffer.title}</h3>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div><strong>Brand:</strong> {laptopOffer.brand}</div>
+                        <div><strong>Processor:</strong> {laptopOffer.processor}</div>
+                        <div><strong>RAM:</strong> {laptopOffer.ram}</div>
+                        <div><strong>Storage:</strong> {laptopOffer.storage}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground line-through">
+                          ₹{laptopOffer.mrp.toLocaleString()}
+                        </span>
+                        <span className="text-xl font-bold text-primary">
+                          ₹{laptopOffer.sale.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 pt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleEditLaptopOffer(laptopOffer)}
+                        >
+                          <Pencil className="w-3 h-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteLaptopOffer(laptopOffer.id)}
+                          aria-label={`Delete laptop offer ${laptopOffer.title}`}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       <BannerModal
@@ -575,17 +742,26 @@ export default function ManageUserApp() {
         offer={editingOffer}
       />
 
+      <LaptopOfferModal
+        open={laptopOfferModalOpen}
+        onOpenChange={setLaptopOfferModalOpen}
+        onSave={handleSaveLaptopOffer}
+        laptopOffer={editingLaptopOffer}
+      />
+
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title={deleteTarget?.type === 'banner' ? "Delete banner?" : "Delete offer?"}
+        title={deleteTarget?.type === 'banner' ? "Delete banner?" : deleteTarget?.type === 'laptop' ? "Delete laptop offer?" : "Delete offer?"}
         description={
           deleteTarget?.type === 'banner'
             ? "This will remove the banner from Home. You can't undo."
+            : deleteTarget?.type === 'laptop'
+            ? "This will remove the laptop offer. You can't undo."
             : "This will remove the special offer. You can't undo."
         }
         isLoading={deleteMutation.isPending}
-        loadingText={deleteTarget?.type === 'banner' ? 'Deleting banner and image...' : 'Deleting offer...'}
+        loadingText={deleteTarget?.type === 'banner' ? 'Deleting banner and image...' : deleteTarget?.type === 'laptop' ? 'Deleting laptop offer...' : 'Deleting offer...'}
         onConfirm={confirmDelete}
       />
     </div>

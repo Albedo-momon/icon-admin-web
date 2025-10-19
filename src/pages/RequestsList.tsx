@@ -108,7 +108,7 @@ const StatusChips = () => {
 };
 
 // Job type badge component
-const JobTypeBadge = ({ type }: { type: JobType }) => {
+export const JobTypeBadge = ({ type }: { type: JobType }) => {
   const variants = {
     IN_HOUSE: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
     IN_SHOP: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",

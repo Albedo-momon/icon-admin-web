@@ -24,6 +24,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { JobType } from "../stores/requestsStore";
+import { JobTypeBadge } from "./RequestsList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
@@ -40,6 +42,7 @@ import { useAgentsStore, type Agent, type JobHistory, type AgentPerformance, typ
 import EditAgentModal from "@/components/agents/EditAgentModal";
 import DeleteAgentModal from "@/components/agents/DeleteAgentModal";
 import { cn } from "@/lib/utils";
+import { JobHistory } from "@/types/agent";
 
 // Status chip component for agents
 const StatusChip = ({ active }: { active: boolean }) => {
@@ -236,21 +239,34 @@ export default function AgentDetail() {
       key: "requestId",
       label: "Request ID",
       sortable: true,
+      render: (value: string) => (
+        <button 
+          className="text-primary hover:underline font-medium"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/requests/${value}`);
+          }}
+        >
+          {value}
+        </button>
+      ),
     },
     {
-      key: "type",
+      key: "customerName",
+      label: "Customer Name",
+      sortable: true,
+    },
+    {
+      key: "jobType",
       label: "Type",
       sortable: true,
+      render: (value: string) => <JobTypeBadge type={value as JobType} />,
     },
     {
       key: "status",
       label: "Status",
       sortable: true,
-      render: (value: string) => (
-        <Badge variant={value === "COMPLETED" ? "default" : "secondary"}>
-          {value}
-        </Badge>
-      ),
+      render: (value: string) => <JobStatusBadge status={value} />,
     },
     {
       key: "completedAt",
@@ -488,7 +504,7 @@ export default function AgentDetail() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Jobs Completed</p>
-                      <p className="text-2xl font-bold">{performance.jobsCompleted}</p>
+                      <p className="text-2xl font-bold">{performance.jobsDone}</p>
                     </div>
                     <CheckCircle className="h-8 w-8 text-green-500" />
                   </div>
@@ -596,3 +612,19 @@ export default function AgentDetail() {
     </div>
   );
 }
+
+// Job status badge component
+const JobStatusBadge = ({ status }: { status: JobHistory["status"] }) => {
+  const variants = {
+    COMPLETED: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    "IN PROGRESS": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    PENDING: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+  };
+
+  return (
+    <Badge className={cn("font-medium", variants[status])}>
+      {status}
+    </Badge>
+  );
+};

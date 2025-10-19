@@ -78,16 +78,34 @@ const generateMockJobHistory = (agentId: string): JobHistory[] => {
   const statuses = ["COMPLETED", "CANCELLED"] as const;
   const customers = ["John Doe", "Jane Smith", "Bob Johnson", "Alice Brown", "Charlie Wilson"];
   
-  return Array.from({ length: Math.floor(Math.random() * 20) + 5 }, (_, index) => ({
-    id: `job-${agentId}-${index + 1}`,
-    requestId: `req-${Math.random().toString(36).substr(2, 9)}`,
-    jobType: jobTypes[Math.floor(Math.random() * jobTypes.length)],
-    status: statuses[Math.floor(Math.random() * statuses.length)],
-    customerName: customers[Math.floor(Math.random() * customers.length)],
-    completedAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-    rating: Math.random() > 0.2 ? Math.floor(Math.random() * 2) + 4 : undefined,
-    feedback: Math.random() > 0.5 ? "Great service, very professional!" : undefined,
-  }));
+  // Generate consistent request IDs that match the main request system format
+  const getConsistentRequestId = (agentIndex: number, jobIndex: number): string => {
+    // Match the format used in requestsStore.ts: agentNum * 100 + requestIndex
+    const baseNumber = agentIndex * 100 + jobIndex;
+    return `REQ-${String(baseNumber).padStart(4, '0')}`;
+  };
+  
+  // Extract agent number from agent ID (agent-1 -> 1, agent-2 -> 2, etc.)
+  const agentNumber = parseInt(agentId.replace(/\D/g, '') || '1');
+  
+  const jobHistory = Array.from({ length: Math.floor(Math.random() * 20) + 5 }, (_, index) => {
+    const requestId = getConsistentRequestId(agentNumber, index + 1);
+    return {
+      id: `job-${agentId}-${index + 1}`,
+      requestId,
+      jobType: jobTypes[Math.floor(Math.random() * jobTypes.length)],
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      customerName: customers[Math.floor(Math.random() * customers.length)],
+      completedAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
+      rating: Math.random() > 0.2 ? Math.floor(Math.random() * 2) + 4 : undefined,
+      feedback: Math.random() > 0.5 ? "Great service, very professional!" : undefined,
+    };
+  });
+  
+  console.log(`Generated job history for ${agentId} (agent number: ${agentNumber}):`, 
+    jobHistory.map(job => job.requestId));
+  
+  return jobHistory;
 };
 
 const generateMockPerformance = (agent: Agent): AgentPerformance => {

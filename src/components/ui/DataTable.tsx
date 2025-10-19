@@ -38,7 +38,8 @@ export type SortDirection = "asc" | "desc" | null;
 
 export interface Column<T> {
   key: string;
-  header: string;
+  header?: string;
+  label?: string;
   sortable?: boolean;
   width?: string;
   render?: (value: any, row: T, index: number) => React.ReactNode;
@@ -224,8 +225,8 @@ export function DataTable<T>({
                       : 'none'
                   }
                 >
-                  <div className="flex items-center gap-2">
-                    {column.header}
+                  <div className="flex items-center gap-2 text-foreground">
+                    {column.header || column.label}
                     {column.sortable && getSortIcon(column.key)}
                   </div>
                 </TableHead>

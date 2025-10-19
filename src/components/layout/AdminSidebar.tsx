@@ -5,7 +5,7 @@ import { useNotificationsStore } from "@/stores/notificationsStore";
 import { Badge } from "@/components/ui/badge";
 
 const navItems = [
-  { name: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { name: "Requests", icon: FileText, path: "/requests" },
   { name: "CSM", icon: Smartphone, path: "/manage-user-app" },
   { name: "Agents", icon: Users, path: "/agents" },

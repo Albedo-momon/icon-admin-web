@@ -125,7 +125,43 @@ const generateMockRequests = (): RequestRow[] => {
   
   const requests: RequestRow[] = [];
   
-  for (let i = 1; i <= 50; i++) {
+  // Generate requests that include all possible agent job history request IDs
+  // First, generate agent-related requests (REQ-0101 to REQ-1225 range)
+  // Generate enough requests to cover all possible job history entries (up to 25 per agent)
+  for (let agentNum = 1; agentNum <= 12; agentNum++) {
+    const baseNumber = agentNum * 100;
+    const numRequestsForAgent = 25; // Generate enough to cover max job history entries
+    
+    for (let i = 1; i <= numRequestsForAgent; i++) {
+      const requestId = `REQ-${String(baseNumber + i).padStart(4, '0')}`;
+      const jobType = jobTypes[Math.floor(Math.random() * jobTypes.length)];
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const user = users[Math.floor(Math.random() * users.length)];
+      const agent = status !== "PENDING" ? agents[agentNum - 1] : undefined;
+      
+      const createdAt = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString();
+      const updatedAt = new Date(new Date(createdAt).getTime() + Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString();
+      
+      requests.push({
+        id: requestId,
+        jobType,
+        primaryStatus: status,
+        user,
+        agent,
+        createdAt,
+        updatedAt,
+      });
+    }
+  }
+  
+  console.log('Generated agent-related request IDs:', 
+    requests.filter(r => /REQ-0[1-9]\d{2}|REQ-1[0-2]\d{2}/.test(r.id))
+      .map(r => r.id)
+      .sort()
+  );
+  
+  // Generate additional regular requests (REQ-0001 to REQ-0050 range)
+  for (let i = 1; i <= 30; i++) {
     const jobType = jobTypes[Math.floor(Math.random() * jobTypes.length)];
     const status = statuses[Math.floor(Math.random() * statuses.length)];
     const user = users[Math.floor(Math.random() * users.length)];
@@ -364,7 +400,7 @@ export const useRequestsStore = create<RequestsState>((set, get) => ({
   },
   
   loadRequestDetail: async (id) => {
-    const { requestDetails } = get();
+    const { requestDetails, requests } = get();
     
     // Return cached detail if available
     if (requestDetails[id]) {
@@ -375,13 +411,23 @@ export const useRequestsStore = create<RequestsState>((set, get) => ({
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Find the request in the current list or generate mock data
-      const allRequests = generateMockRequests();
-      const request = allRequests.find(req => req.id === id);
+      // Find the request in the current loaded requests first, then fallback to generating all requests
+      let request = requests.find(req => req.id === id);
+      
+      // If not found in current requests, search in all possible mock requests
+      if (!request) {
+        const allRequests = generateMockRequests();
+        request = allRequests.find(req => req.id === id);
+        console.log(`Looking for request ${id} in generated requests:`, 
+          allRequests.map(r => r.id).filter(reqId => reqId.includes(id.slice(-3))));
+      }
       
       if (!request) {
+        console.error(`Request ${id} not found in any data source`);
         return null;
       }
+      
+      console.log(`Found request ${id}:`, request);
       
       const detail: RequestDetail = {
         ...request,
@@ -591,5 +637,11 @@ export const useRequestsStore = create<RequestsState>((set, get) => ({
 }));
 
 // Initialize the store with mock data
-useRequestsStore.getState().loadRequests();
-useRequestsStore.setState({ agents: generateMockAgents() });
+const initializeStore = () => {
+  const store = useRequestsStore.getState();
+  store.loadRequests();
+  useRequestsStore.setState({ agents: generateMockAgents() });
+};
+
+// Call initialization
+initializeStore();
