@@ -12,6 +12,8 @@ import { isAdmin } from "./services/authService";
 import Dashboard from "./pages/Dashboard";
 import ManageUserApp from "./pages/ManageUserApp";
 import ManageAgentApp from "./pages/ManageAgentApp";
+import RequestsList from "./pages/RequestsList";
+import RequestDetail from "./pages/RequestDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import EmailVerification from "./pages/EmailVerification";
@@ -143,6 +145,26 @@ const App = () => (
               <AdminGuard>
                 <AdminLayout>
                   <ManageAgentApp />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/requests"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <RequestsList />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/requests/:id"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <RequestDetail />
                 </AdminLayout>
               </AdminGuard>
             }
