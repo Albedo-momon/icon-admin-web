@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { name: "Manage User App", icon: Smartphone, path: "/manage-user-app" },
+  { name: "CSM", icon: Smartphone, path: "/manage-user-app" },
   { name: "Manage Agent App", icon: Headphones, path: "/manage-agent-app" },
 ];
 
