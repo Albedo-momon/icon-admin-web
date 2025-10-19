@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationsDrawer } from "@/components/dashboard/NotificationsDrawer";
 import { useAuthStore } from "@/stores/authStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -52,10 +53,12 @@ export function AdminTopbar() {
           </div>
 
           {/* Notification Bell */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-          </Button>
+          <NotificationsDrawer>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+            </Button>
+          </NotificationsDrawer>
 
           {/* Settings Dropdown */}
           <DropdownMenu>
