@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -68,6 +68,9 @@ const JobTypeBadge = ({ type }: { type: JobType }) => {
 export default function RequestDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "overview";
+  const focusedEventId = searchParams.get("focus");
   const { 
     loadRequestDetail, 
     reassignRequest, 
@@ -240,7 +243,7 @@ export default function RequestDetail() {
       </div>
       
       {/* Tabs */}
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs defaultValue={initialTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -416,6 +419,7 @@ export default function RequestDetail() {
                   },
                   comment: event.description
                 }))}
+                focusedEventId={focusedEventId}
               />
             </CardContent>
           </Card>

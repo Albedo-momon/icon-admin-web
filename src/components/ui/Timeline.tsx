@@ -24,6 +24,7 @@ export interface TimelineProps {
   showTime?: boolean;
   showUser?: boolean;
   reverse?: boolean;
+  focusedEventId?: string; // New prop for highlighting a specific event
 }
 
 const typeStyles = {
@@ -66,6 +67,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   showTime = true,
   showUser = true,
   reverse = false,
+  focusedEventId, // Destructure new prop
 }) => {
   const sortedItems = reverse ? [...items].reverse() : items;
 
@@ -75,9 +77,16 @@ export const Timeline: React.FC<TimelineProps> = ({
         const isLast = index === sortedItems.length - 1;
         const style = typeStyles[item.type || "default"];
         const IconComponent = item.icon ? () => item.icon : style.icon;
+        const isFocused = focusedEventId && item.id === focusedEventId; // Check if item is focused
 
         return (
-          <div key={item.id} className="relative flex gap-4 pb-6 last:pb-0">
+          <div 
+            key={item.id} 
+            className={cn(
+              "relative flex gap-4 pb-6 last:pb-0",
+              isFocused && "rounded-md bg-yellow-100/20 dark:bg-yellow-900/10 p-2 -mx-2"
+            )}
+          >
             {/* Timeline Line */}
             {!isLast && (
               <div
@@ -199,12 +208,14 @@ export interface StatusTimelineProps {
   items: StatusTimelineItem[];
   className?: string;
   compact?: boolean;
+  focusedEventId?: string; // New prop for highlighting a specific event
 }
 
 export const StatusTimeline: React.FC<StatusTimelineProps> = ({
   items,
   className,
   compact = false,
+  focusedEventId, // Destructure new prop
 }) => {
   const getStatusType = (status: string): TimelineItem["type"] => {
     const normalizedStatus = status.toLowerCase();
@@ -250,6 +261,7 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({
       compact={compact}
       showTime={true}
       showUser={true}
+      focusedEventId={focusedEventId} // Pass focusedEventId to Timeline
     />
   );
 };

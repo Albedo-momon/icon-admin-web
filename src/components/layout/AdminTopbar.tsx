@@ -9,14 +9,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { NotificationsDrawer } from "@/components/dashboard/NotificationsDrawer";
+import { NotificationsDrawer } from "@/components/notifications/NotificationsDrawer";
 import { useAuthStore } from "@/stores/authStore";
+import { useNotificationsStore } from "@/stores/notificationsStore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 export function AdminTopbar() {
   const { user, logout } = useAuthStore();
+  const { items } = useNotificationsStore();
   const navigate = useNavigate();
+
+  const unreadCount = items.filter(item => !item.read).length;
 
   const handleLogout = async () => {
     try {
@@ -56,7 +61,14 @@ export function AdminTopbar() {
           <NotificationsDrawer>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Badge>
+              )}
             </Button>
           </NotificationsDrawer>
 

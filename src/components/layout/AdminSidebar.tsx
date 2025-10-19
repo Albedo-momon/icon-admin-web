@@ -1,15 +1,21 @@
-import { LayoutDashboard, Smartphone, Users, Monitor, FileText } from "lucide-react";
+import { LayoutDashboard, Smartphone, Users, Monitor, FileText, Bell } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useNotificationsStore } from "@/stores/notificationsStore";
+import { Badge } from "@/components/ui/badge";
 
 const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/" },
   { name: "Requests", icon: FileText, path: "/requests" },
   { name: "CSM", icon: Smartphone, path: "/manage-user-app" },
   { name: "Agents", icon: Users, path: "/agents" },
+  { name: "Notifications", icon: Bell, path: "/notifications", showBadge: true },
 ];
 
 export function AdminSidebar() {
+  const { items } = useNotificationsStore();
+  const unreadCount = items.filter(item => !item.read).length;
+
   return (
     <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-screen sticky top-0 border-r border-gray-400 dark:border-gray-600">
       {/* Logo */}
@@ -31,7 +37,7 @@ export function AdminSidebar() {
             to={item.path}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 relative",
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -40,6 +46,11 @@ export function AdminSidebar() {
           >
             <item.icon className="w-5 h-5" />
             <span className="font-medium">{item.name}</span>
+            {item.showBadge && unreadCount > 0 && (
+              <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-xs">
+                {unreadCount}
+              </Badge>
+            )}
           </NavLink>
         ))}
       </nav>

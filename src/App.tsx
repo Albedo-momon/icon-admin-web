@@ -15,6 +15,7 @@ import RequestsList from "./pages/RequestsList";
 import RequestDetail from "./pages/RequestDetail";
 import AgentsList from "./pages/AgentsList";
 import AgentDetail from "./pages/AgentDetail";
+import NotificationsPage from "./pages/NotificationsPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import EmailVerification from "./pages/EmailVerification";
@@ -176,6 +177,16 @@ const App = () => (
               <AdminGuard>
                 <AdminLayout>
                   <AgentDetail />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <NotificationsPage />
                 </AdminLayout>
               </AdminGuard>
             }
