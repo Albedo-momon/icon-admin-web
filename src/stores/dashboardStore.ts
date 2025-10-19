@@ -12,11 +12,13 @@ export type DashboardCounts = {
   completedToday: number;
   cancelled: { 
     total: number; 
+    byType?: Record<RequestType, number>;
     byActor: { user: number; agent: number; admin: number; }; 
   };
   agents: { 
     active: number; 
     total: number; 
+    byType?: Record<RequestType, number>;
     utilization: { free: number; busy: number; }; 
   };
   users: { 
@@ -25,6 +27,7 @@ export type DashboardCounts = {
   };
   csat30d?: number;
   activeOffers?: number;
+  completedTodayByType?: Record<RequestType, number>;
 };
 
 export type TimePoint = { 
@@ -101,11 +104,21 @@ const generateMockCounts = (type: RequestType | "ALL", statuses: RequestStatus[]
     completedToday: 89,
     cancelled: {
       total: 12,
+      byType: {
+        IN_HOUSE: 5,
+        IN_SHOP: 4,
+        PC_BUILD: 3
+      },
       byActor: { user: 7, agent: 3, admin: 2 }
     },
     agents: {
       active: 156,
       total: 180,
+      byType: {
+        IN_HOUSE: 67,
+        IN_SHOP: 45,
+        PC_BUILD: 44
+      },
       utilization: { free: 89, busy: 67 }
     },
     users: {
@@ -113,24 +126,44 @@ const generateMockCounts = (type: RequestType | "ALL", statuses: RequestStatus[]
       total: 3200
     },
     csat30d: 4.2,
-    activeOffers: 8
+    activeOffers: 8,
+    completedTodayByType: {
+      IN_HOUSE: 38,
+      IN_SHOP: 26,
+      PC_BUILD: 25
+    }
   };
 
   let filteredData = { ...baseData };
 
   // Filter by type if not "ALL"
   if (type !== "ALL") {
-    const typeMultiplier = type === "IN_HOUSE" ? 0.43 : type === "IN_SHOP" ? 0.29 : 0.28;
     filteredData = {
       ...filteredData,
       open: {
-        total: Math.round(filteredData.open.total * typeMultiplier),
+        total: filteredData.open.byType[type],
         byType: { [type]: filteredData.open.byType[type] } as Record<RequestType, number>
       },
-      completedToday: Math.round(filteredData.completedToday * typeMultiplier),
+      completedToday: filteredData.completedTodayByType?.[type] || 0,
       cancelled: {
-        ...filteredData.cancelled,
-        total: Math.round(filteredData.cancelled.total * typeMultiplier)
+        total: filteredData.cancelled.byType?.[type] || 0,
+        byType: { [type]: filteredData.cancelled.byType?.[type] || 0 } as Record<RequestType, number>,
+        byActor: {
+          // Proportionally distribute cancelled by actor for the selected type
+          user: Math.round(filteredData.cancelled.byActor.user * ((filteredData.cancelled.byType?.[type] || 0) / filteredData.cancelled.total)),
+          agent: Math.round(filteredData.cancelled.byActor.agent * ((filteredData.cancelled.byType?.[type] || 0) / filteredData.cancelled.total)),
+          admin: Math.round(filteredData.cancelled.byActor.admin * ((filteredData.cancelled.byType?.[type] || 0) / filteredData.cancelled.total))
+        }
+      },
+      agents: {
+        active: filteredData.agents.byType?.[type] || 0,
+        total: filteredData.agents.total, // Keep total agents same as they handle all types
+        byType: { [type]: filteredData.agents.byType?.[type] || 0 } as Record<RequestType, number>,
+        utilization: {
+          // Proportionally adjust utilization for the selected type
+          free: Math.round(filteredData.agents.utilization.free * ((filteredData.agents.byType?.[type] || 0) / filteredData.agents.active)),
+          busy: Math.round(filteredData.agents.utilization.busy * ((filteredData.agents.byType?.[type] || 0) / filteredData.agents.active))
+        }
       }
     };
   }

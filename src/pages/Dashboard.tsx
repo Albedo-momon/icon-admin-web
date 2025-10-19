@@ -26,14 +26,14 @@ export default function Dashboard() {
       isPositive: true,
       icon: Users,
       iconBgColor: "bg-blue-500",
-      tooltip: {
+      tooltip: selectedType === "ALL" ? {
         title: "Breakdown by Type",
         items: [
           { label: "In-House", value: counts.open.byType.IN_HOUSE, color: "#3b82f6" },
           { label: "In-Shop", value: counts.open.byType.IN_SHOP, color: "#10b981" },
           { label: "PC Build", value: counts.open.byType.PC_BUILD, color: "#8b5cf6" }
         ]
-      }
+      } : undefined
     },
     {
       title: "Completed Today",
@@ -50,14 +50,14 @@ export default function Dashboard() {
       isPositive: true,
       icon: XCircle,
       iconBgColor: "bg-red-500",
-      tooltip: {
+      tooltip: selectedType === "ALL" ? {
         title: "Cancelled by Actor",
         items: [
           { label: "User", value: counts.cancelled.byActor.user, color: "#ef4444" },
           { label: "Agent", value: counts.cancelled.byActor.agent, color: "#f97316" },
           { label: "Admin", value: counts.cancelled.byActor.admin, color: "#dc2626" }
         ]
-      }
+      } : undefined
     },
     {
       title: "Agents Active",

@@ -77,7 +77,7 @@ export function KPICard({
                         )}
                         <span>{item.label}</span>
                       </div>
-                      <span className="font-medium">{item.value.toLocaleString()}</span>
+                      <span className="font-medium">{(item.value || 0).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
