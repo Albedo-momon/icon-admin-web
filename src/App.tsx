@@ -11,9 +11,10 @@ import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { isAdmin } from "./services/authService";
 import Dashboard from "./pages/Dashboard";
 import ManageUserApp from "./pages/ManageUserApp";
-import ManageAgentApp from "./pages/ManageAgentApp";
 import RequestsList from "./pages/RequestsList";
 import RequestDetail from "./pages/RequestDetail";
+import AgentsList from "./pages/AgentsList";
+import AgentDetail from "./pages/AgentDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import EmailVerification from "./pages/EmailVerification";
@@ -140,16 +141,6 @@ const App = () => (
             }
           />
           <Route
-            path="/manage-agent-app"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <ManageAgentApp />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
             path="/requests"
             element={
               <AdminGuard>
@@ -165,6 +156,26 @@ const App = () => (
               <AdminGuard>
                 <AdminLayout>
                   <RequestDetail />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/agents"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <AgentsList />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/agents/:id"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <AgentDetail />
                 </AdminLayout>
               </AdminGuard>
             }

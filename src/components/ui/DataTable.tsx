@@ -46,7 +46,7 @@ export interface Column<T> {
 }
 
 export interface RowAction<T> {
-  label: string;
+  label: string | ((row: T) => string);
   onClick: (row: T) => void;
   variant?: "default" | "destructive";
   disabled?: (row: T) => boolean;
@@ -103,17 +103,14 @@ export function DataTable<T>({
     let newDirection: SortDirection = "asc";
     
     if (currentSortBy === key) {
-      if (currentSortDirection === "asc") {
-        newDirection = "desc";
-      } else if (currentSortDirection === "desc") {
-        newDirection = null;
-      }
+      // Toggle between asc and desc only
+      newDirection = currentSortDirection === "asc" ? "desc" : "asc";
     }
 
     if (onSort) {
       onSort(key, newDirection);
     } else {
-      setInternalSortBy(newDirection ? key : null);
+      setInternalSortBy(key);
       setInternalSortDirection(newDirection);
     }
   };
@@ -310,7 +307,7 @@ export function DataTable<T>({
                                   action.variant === "destructive" && "text-destructive focus:text-destructive"
                                 )}
                               >
-                                {action.label}
+                                {typeof action.label === "function" ? action.label(row) : action.label}
                               </DropdownMenuItem>
                             ))}
                           </DropdownMenuContent>

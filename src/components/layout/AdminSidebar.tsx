@@ -1,4 +1,4 @@
-import { LayoutDashboard, Smartphone, Headphones, Monitor, FileText } from "lucide-react";
+import { LayoutDashboard, Smartphone, Users, Monitor, FileText } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -6,7 +6,7 @@ const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/" },
   { name: "Requests", icon: FileText, path: "/requests" },
   { name: "CSM", icon: Smartphone, path: "/manage-user-app" },
-  { name: "Manage Agent App", icon: Headphones, path: "/manage-agent-app" },
+  { name: "Agents", icon: Users, path: "/agents" },
 ];
 
 export function AdminSidebar() {
