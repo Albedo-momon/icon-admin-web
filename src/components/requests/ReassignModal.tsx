@@ -32,42 +32,49 @@ interface ReassignModalProps {
   request: { id: string; agent?: { id: string; name: string } };
 }
 
-// Mock agents data
+// Mock agents data - IDs match the store's agent IDs
 const mockAgents: Agent[] = [
   {
-    id: "agent-1",
-    name: "John Smith",
-    email: "john.smith@company.com",
+    id: "a1",
+    name: "Alex Thompson",
+    email: "alex.thompson@company.com",
     status: "FREE",
     currentTasks: 2,
   },
   {
-    id: "agent-2", 
-    name: "Sarah Johnson",
-    email: "sarah.johnson@company.com",
+    id: "a2", 
+    name: "Lisa Chen",
+    email: "lisa.chen@company.com",
     status: "BUSY",
     currentTasks: 5,
   },
   {
-    id: "agent-3",
-    name: "Mike Chen",
-    email: "mike.chen@company.com", 
+    id: "a3",
+    name: "Mark Rodriguez",
+    email: "mark.rodriguez@company.com", 
     status: "FREE",
     currentTasks: 1,
   },
   {
-    id: "agent-4",
-    name: "Emily Davis",
-    email: "emily.davis@company.com",
+    id: "a4",
+    name: "Anna Kim",
+    email: "anna.kim@company.com",
     status: "BUSY",
     currentTasks: 4,
   },
   {
-    id: "agent-5",
-    name: "Alex Rodriguez",
-    email: "alex.rodriguez@company.com",
+    id: "a5",
+    name: "Chris Lee",
+    email: "chris.lee@company.com",
     status: "FREE",
     currentTasks: 3,
+  },
+  {
+    id: "a6",
+    name: "Jessica Wang",
+    email: "jessica.wang@company.com",
+    status: "FREE",
+    currentTasks: 2,
   },
 ];
 
@@ -84,7 +91,7 @@ const AgentCard = ({
 }) => (
   <div
     className={cn(
-      "p-4 border rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md",
+      "p-4 border rounded-lg cursor-pointer",
       isSelected && "border-primary bg-primary/5",
       isCurrent && "border-muted bg-muted/50 cursor-not-allowed opacity-60"
     )}

@@ -311,6 +311,26 @@ export const useRequestsStore = create<RequestsState>((set, get) => ({
         );
       }
       
+      // Apply date range filter
+      if (filters.dateRange?.from || filters.dateRange?.to) {
+        allRequests = allRequests.filter(req => {
+          const requestDate = new Date(req.createdAt);
+          
+          if (filters.dateRange?.from && filters.dateRange?.to) {
+            // Both dates selected - filter between range
+            return requestDate >= filters.dateRange.from && requestDate <= filters.dateRange.to;
+          } else if (filters.dateRange?.from) {
+            // Only from date - filter from this date onwards
+            return requestDate >= filters.dateRange.from;
+          } else if (filters.dateRange?.to) {
+            // Only to date - filter up to this date
+            return requestDate <= filters.dateRange.to;
+          }
+          
+          return true;
+        });
+      }
+      
       // Apply sorting
       allRequests.sort((a, b) => {
         const aValue = a[sort.field];

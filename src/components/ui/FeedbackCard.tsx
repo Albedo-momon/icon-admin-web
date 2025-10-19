@@ -104,7 +104,6 @@ export const FeedbackCard: React.FC<FeedbackCardProps> = ({
 
   return (
     <Card className={cn(
-      "transition-colors hover:bg-muted/30",
       feedback.sentiment && `border-l-4 ${getSentimentColor(feedback.sentiment)}`,
       feedback.resolved && "opacity-75",
       className

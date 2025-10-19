@@ -397,7 +397,7 @@ export default function ManageUserApp() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="border-b border-gray-200 last:border-0 hover:bg-muted/30 transition-colors"
+                        className="border-b border-gray-200 last:border-0"
                       >
                         <td className="p-4">
                           <img
@@ -511,7 +511,7 @@ export default function ManageUserApp() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <Card className="overflow-hidden">
                     <div className="aspect-video relative">
                       <img
                         src={offer.imageUrl}

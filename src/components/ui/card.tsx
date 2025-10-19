@@ -6,19 +6,11 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
   <div 
     ref={ref} 
     className={cn(
-      "rounded-lg border border-card-border bg-card text-card-foreground transition-all duration-200",
+      "rounded-lg border border-card-border bg-card text-card-foreground",
       // Light mode shadows: soft spread + lift + top highlight
       "shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25),0_2px_8px_rgba(0,0,0,0.08),inset_0_-1px_0_rgba(255,255,255,0.65)]",
       // Dark mode shadows: maintain existing dark styling
       "dark:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.45),0_2px_8px_rgba(0,0,0,0.30),inset_0_-1px_0_rgba(255,255,255,0.06)]",
-      // Light mode hover: darken border +6%, increase shadow B opacity to 0.10
-      "hover:border-card-border/[0.94] hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25),0_2px_8px_rgba(0,0,0,0.10),inset_0_-1px_0_rgba(255,255,255,0.65)]",
-      // Dark mode hover: maintain existing dark hover
-      "dark:hover:bg-card/[0.97] dark:hover:scale-[1.005]",
-      // Light mode active: scale 0.995, reduce shadow A to 0.18
-      "active:scale-[0.995] active:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.08),inset_0_-1px_0_rgba(255,255,255,0.65)]",
-      // Dark mode active: maintain existing dark active
-      "dark:active:scale-[0.995] dark:active:bg-card/[0.95]",
       // Focus ring with brand accent at 28% opacity
       "focus-within:ring-2 focus-within:ring-primary/28",
       className

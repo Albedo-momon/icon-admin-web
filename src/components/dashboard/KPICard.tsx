@@ -29,7 +29,7 @@ export function KPICard({
   tooltip,
 }: KPICardProps) {
   const cardContent = (
-    <Card className="p-6 hover:shadow-lg transition-shadow duration-300">
+    <Card className="p-6">
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground font-medium">{title}</p>

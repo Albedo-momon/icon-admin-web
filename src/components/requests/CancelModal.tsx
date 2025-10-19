@@ -132,7 +132,7 @@ export default function CancelModal({
                 Cancellation Summary:
               </p>
               <p className="text-sm text-red-700 dark:text-red-300">
-                Request {requestId} will be cancelled due to: <strong>{selectedReasonLabel}</strong>
+                Request {request.id} will be cancelled due to: <strong>{selectedReasonLabel}</strong>
               </p>
               {comment && (
                 <p className="text-sm text-red-700 dark:text-red-300 mt-1">

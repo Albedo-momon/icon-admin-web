@@ -117,10 +117,10 @@ export function NotificationsDrawer({ children }: NotificationsDrawerProps) {
                 <div
                   key={notification.id}
                   className={cn(
-                    "p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md",
+                    "p-4 rounded-lg border cursor-pointer",
                     notification.read 
                       ? "bg-muted/30 border-muted" 
-                      : "bg-card border-border shadow-sm hover:shadow-md"
+                      : "bg-card border-border shadow-sm"
                   )}
                   onClick={() => handleNotificationClick(notification)}
                 >

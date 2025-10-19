@@ -115,7 +115,7 @@ export default function ManageAgentApp() {
                 {agents.map((agent) => (
                   <tr
                     key={agent.id}
-                    className="border-b border-gray-200 last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                    className="border-b border-gray-200 last:border-0 cursor-pointer"
                   >
                     <td className="p-4">
                       <div>

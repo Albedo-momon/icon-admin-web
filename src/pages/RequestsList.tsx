@@ -10,7 +10,6 @@ import {
   Eye,
   UserCheck,
   X,
-  Calendar,
   RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,30 +45,29 @@ import { FilterBar } from "@/components/ui/FilterBar";
 import { Chip, StatusChip, ChipGroup } from "@/components/ui/Chips";
 import { DataTable } from "@/components/ui/DataTable";
 import { cn } from "@/lib/utils";
+import { DateRangePicker } from "../components/ui/DateRangePicker";
 
 // Type switch component using new Chips
 const TypeSwitch = () => {
   const { filters, setFilters } = useRequestsStore();
   
   const options = [
-    { value: "ALL", label: "All" },
-    { value: "IN_HOUSE", label: "In-House" },
-    { value: "IN_SHOP", label: "In-Shop" },
-    { value: "PC_BUILD", label: "PC Build" },
+    { value: "ALL", label: "All", variant: "outline" as const },
+    { value: "IN_HOUSE", label: "In-House", variant: "secondary" as const },
+    { value: "IN_SHOP", label: "In-Shop", variant: "success" as const },
+    { value: "PC_BUILD", label: "PC Build", variant: "warning" as const },
   ];
   
   return (
     <ChipGroup
-      value={filters.type}
-      onValueChange={(value) => setFilters({ type: value as JobType | "ALL" })}
       className="flex-wrap"
       aria-label="Filter by request type"
     >
       {options.map((option) => (
         <Chip
           key={option.value}
-          value={option.value}
-          variant={filters.type === option.value ? "default" : "outline"}
+          variant={filters.type === option.value ? "default" : option.variant}
+          onClick={() => setFilters({ type: option.value as JobType | "ALL" })}
         >
           {option.label}
         </Chip>
@@ -83,30 +81,27 @@ const StatusChips = () => {
   const { filters, setFilters } = useRequestsStore();
   
   const statuses = [
-    { value: "ALL", label: "All" },
-    { value: "PENDING", label: "Pending" },
-    { value: "ACCEPTED", label: "Accepted" },
-    { value: "IN_PROGRESS", label: "In Progress" },
-    { value: "COMPLETED", label: "Completed" },
-    { value: "CANCELLED", label: "Cancelled" },
+    { value: "ALL", label: "All", variant: "outline" as const },
+    { value: "PENDING", label: "Pending", variant: "warning" as const },
+    { value: "ACCEPTED", label: "Accepted", variant: "pr" as const },
+    { value: "IN_PROGRESS", label: "In Progress", variant: "secondary" as const },
+    { value: "COMPLETED", label: "Completed", variant: "success" as const },
+    { value: "CANCELLED", label: "Cancelled", variant: "destructive" as const },
   ] as const;
   
   return (
     <ChipGroup
-      value={filters.status}
-      onValueChange={(value) => setFilters({ status: value as PrimaryStatus | "ALL" })}
       className="flex-wrap"
       aria-label="Filter by request status"
     >
       {statuses.map((status) => (
-        <StatusChip
+        <Chip
           key={status.value}
-          value={status.value}
-          status={status.value === "ALL" ? "PENDING" : status.value as PrimaryStatus}
-          variant={filters.status === status.value ? "default" : "outline"}
+          variant={filters.status === status.value ? "default" : status.variant}
+          onClick={() => setFilters({ status: status.value as PrimaryStatus | "ALL" })}
         >
           {status.label}
-        </StatusChip>
+        </Chip>
       ))}
     </ChipGroup>
   );
@@ -117,7 +112,7 @@ const JobTypeBadge = ({ type }: { type: JobType }) => {
   const variants = {
     IN_HOUSE: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
     IN_SHOP: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    PC_BUILD: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+    PC_BUILD: "bg-purple-700 text-white hover:bg-purple-800 dark:bg-purple-900 dark:text-purple-200",
   };
   
   const labels = {
@@ -220,7 +215,7 @@ const SortableHeader = ({
   
   return (
     <TableHead 
-      className={cn("cursor-pointer select-none hover:bg-muted/50", className)}
+      className={cn("cursor-pointer select-none", className)}
       onClick={handleSort}
     >
       <div className="flex items-center gap-2">
@@ -338,6 +333,7 @@ export default function RequestsList() {
   const [selectedRequest, setSelectedRequest] = useState<RequestRow | null>(null);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>();
   
   // Debounced search
   useEffect(() => {
@@ -347,6 +343,19 @@ export default function RequestsList() {
     
     return () => clearTimeout(timer);
   }, [searchInput, setFilters]);
+  
+  // Date range effect - update filters when date range changes
+  useEffect(() => {
+    if (dateRange?.from || dateRange?.to) {
+      setFilters({ dateRange });
+    } else if (dateRange !== undefined) {
+      // Clear date range filter when dateRange is explicitly set to empty object or similar
+      setFilters({ dateRange: undefined });
+    } else {
+      // Clear date range filter when dateRange is undefined
+      setFilters({ dateRange: undefined });
+    }
+  }, [dateRange, setFilters]);
   
   // Action handlers
   const { reassignRequest, cancelRequest } = useRequestsStore();
@@ -437,10 +446,11 @@ export default function RequestsList() {
             
             <div className="w-48">
               <label className="text-sm font-medium mb-2 block">Date Range</label>
-              <Button variant="outline" className="w-full justify-start">
-                <Calendar className="mr-2 h-4 w-4" />
-                Select dates
-              </Button>
+              <DateRangePicker
+                value={dateRange}
+                onChange={setDateRange}
+                placeholder="Select dates"
+              />
             </div>
           </div>
         </CardContent>
@@ -484,7 +494,7 @@ export default function RequestsList() {
                       key={request.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      className="cursor-pointer"
                       onClick={() => handleRowClick(request)}
                     >
                       <TableCell className="font-medium">

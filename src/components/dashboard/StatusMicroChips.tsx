@@ -4,8 +4,8 @@ import { useDashboardStore, type RequestStatus } from "@/stores/dashboardStore";
 
 const statusOptions: { value: RequestStatus; label: string; variant: "default" | "secondary" | "destructive" | "outline" }[] = [
   { value: "PENDING", label: "Pending", variant: "outline" },
-  { value: "ACCEPTED", label: "Accepted", variant: "secondary" },
-  { value: "IN_PROGRESS", label: "In Progress", variant: "default" },
+  { value: "ACCEPTED", label: "Accepted", variant: "default" },
+  { value: "IN_PROGRESS", label: "In Progress", variant: "secondary" },
   { value: "COMPLETED", label: "Completed", variant: "secondary" },
   { value: "CANCELLED", label: "Cancelled", variant: "destructive" }
 ];

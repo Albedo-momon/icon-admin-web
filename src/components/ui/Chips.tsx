@@ -78,8 +78,12 @@ export const StatusChip: React.FC<StatusChipProps> = ({ status, size = "md", cla
       return "success";
     }
     
-    if (["pending", "in_progress", "processing", "reviewing"].includes(normalizedStatus)) {
+    if (["pending"].includes(normalizedStatus)) {
       return "warning";
+    }
+    
+    if (["in_progress", "processing", "reviewing"].includes(normalizedStatus)) {
+      return "secondary";
     }
     
     if (["cancelled", "rejected", "failed", "offline", "inactive"].includes(normalizedStatus)) {
@@ -87,7 +91,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({ status, size = "md", cla
     }
     
     if (["draft", "paused", "on_hold"].includes(normalizedStatus)) {
-      return "secondary";
+      return "default";
     }
     
     return "default";
