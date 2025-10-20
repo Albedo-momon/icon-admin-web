@@ -512,14 +512,14 @@ export const useAdminStore = create<AdminStore>()(
           
           const newOffer: LaptopOffer = {
             id: response.id,
-            model: response.productName || response.model, // Backend stores as productName
+            model: response.model,
             price: response.price,
             discounted: response.discounted,
             discountPercent: response.discountPercent,
             status: response.status,
             imageUrl: imageUrl,
             specs: response.specs,
-            sort: response.sortOrder || response.sort || 0,
+            sort: response.sort,
             createdAt: response.createdAt,
             updatedAt: response.updatedAt,
           };
@@ -568,14 +568,14 @@ export const useAdminStore = create<AdminStore>()(
             laptopOffers: state.laptopOffers.map((o) =>
               o.id === id ? {
                 ...o,
-                model: response.productName || response.model, // Backend stores as productName
+                model: response.model,
                 price: response.price,
                 discounted: response.discounted,
                 discountPercent: response.discountPercent,
                 status: response.status,
                 imageUrl: imageUrl,
                 specs: response.specs,
-                sort: response.sortOrder || response.sort || o.sort,
+                sort: response.sort,
                 updatedAt: response.updatedAt,
               } : o
             ),

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Calendar, X } from 'lucide-react';
 import { Button } from './button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { Calendar as CalendarComponent } from './calendar';
 import { format, subDays, subMonths, subYears, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { DateRange } from 'react-day-picker';
+import type { DateRange } from 'react-day-picker';
 
 interface DateRangePickerProps {
   value?: DateRange;

@@ -91,7 +91,7 @@ export function DataTable<T>({
   rowActions = [],
   emptyMessage = "No data available",
   className,
-  getRowId = (_, index) => index,
+  getRowId = (row: T) => (row as any).id || (row as any).key || String(row),
   onRowClick,
 }: DataTableProps<T>) {
   const [internalSortBy, setInternalSortBy] = useState<string | null>(null);
@@ -144,7 +144,6 @@ export function DataTable<T>({
   }, [data, currentSortBy, currentSortDirection, columns]);
 
   const isAllSelected = selectable && data.length > 0 && selectedRows.length === data.length;
-  const isIndeterminate = selectable && selectedRows.length > 0 && selectedRows.length < data.length;
 
   const handleSelectAll = () => {
     if (!onSelectionChange) return;
@@ -200,7 +199,6 @@ export function DataTable<T>({
                 <TableHead className="w-12">
                   <Checkbox
                     checked={isAllSelected}
-                    indeterminate={isIndeterminate}
                     onCheckedChange={handleSelectAll}
                     aria-label="Select all rows"
                   />

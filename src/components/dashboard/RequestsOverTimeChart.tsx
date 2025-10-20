@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useDashboardStore } from "@/stores/dashboardStore";
 
 export function RequestsOverTimeChart() {
-  const { timeSeries, selectedType, selectedStatuses } = useDashboardStore();
+  const { timeSeries, selectedType } = useDashboardStore();
 
   // Filter and format data based on selected type
   const chartData = timeSeries.map(point => {
@@ -37,7 +37,7 @@ export function RequestsOverTimeChart() {
 
   const visibleSeries = getVisibleSeries();
   const hasData = chartData.some(point => 
-    visibleSeries.some(series => point[series as keyof typeof point] > 0)
+    visibleSeries.some(series => (point[series as keyof typeof point] as number) > 0)
   );
 
   const seriesColors = {

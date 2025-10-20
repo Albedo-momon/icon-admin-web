@@ -154,10 +154,12 @@ export function OfferModal({ open, onOpenChange, onSave, offer }: OfferModalProp
         setUploadProgress(0);
         
         try {
-          const uploadedUrl = await uploadImage(file, 'special-offers', data.title, (progress) => {
-            if (progress.stage === 'uploading') {
-              setSaveState('uploading');
-              setUploadProgress(progress.percent);
+          const uploadedUrl = await uploadImage(file, data.title, {
+            onProgress: (progress: any) => {
+              if (progress.stage === 'uploading') {
+                setSaveState('uploading');
+                setUploadProgress(progress.percent);
+              }
             }
           });
           
@@ -174,9 +176,6 @@ export function OfferModal({ open, onOpenChange, onSave, offer }: OfferModalProp
                 break;
               case 'UPLOAD_FAILED':
                 toast.error("Upload failed. Please try again.");
-                break;
-              case 'AUTH_ERROR':
-                toast.error("Session expired. Please log in again.");
                 break;
               case 'NETWORK_ERROR':
                 toast.error("Can't reach server. Please check your connection.");

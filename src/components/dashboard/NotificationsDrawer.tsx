@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Check, CheckCheck, ExternalLink } from "lucide-react";
+import { Bell, CheckCheck, ExternalLink } from "lucide-react";
 import { useDashboardStore, type NotificationItem } from "@/stores/dashboardStore";
 import { cn } from "@/lib/utils";
 
@@ -48,19 +48,19 @@ interface NotificationsDrawerProps {
 }
 
 export function NotificationsDrawer({ children }: NotificationsDrawerProps) {
-  const { notifications, markNotificationAsRead, markAllNotificationsAsRead } = useDashboardStore();
+  const { notifications, markNotificationRead, markAllNotificationsRead } = useDashboardStore();
   const [isOpen, setIsOpen] = useState(false);
   
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleNotificationClick = (notification: NotificationItem) => {
-    markNotificationAsRead(notification.id);
+    markNotificationRead(notification.id);
     setIsOpen(false);
     window.open(notification.href, '_blank');
   };
 
   const handleMarkAllAsRead = () => {
-    markAllNotificationsAsRead();
+    markAllNotificationsRead();
   };
 
   return (

@@ -5,33 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAdminStore } from "@/store/adminStore";
-import type { Banner, Offer } from "@/store/adminStore";
+import { useAdminStore, type Banner, type Offer, type LaptopOffer } from "@/store/adminStore";
 import { toast } from "@/hooks/use-toast";
-
-// Define LaptopOffer type locally
-interface LaptopOffer {
-  id: string;
-  title: string;
-  description: string;
-  originalPrice: number;
-  discountedPrice: number;
-  discountPercentage: number;
-  imageUrl: string;
-  features: string[];
-  specifications: Record<string, string>;
-  isActive: boolean;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-  // Additional properties used in the UI
-  mrp: number;
-  sale: number;
-  brand: string;
-  processor: string;
-  ram: string;
-  storage: string;
-}
 import { BannerModal } from "@/components/admin/BannerModal";
 import { OfferModal } from "@/components/admin/OfferModal";
 import { LaptopOfferModal } from "@/components/admin/LaptopOfferModal";
@@ -253,7 +228,11 @@ export default function ManageUserApp() {
         toast({ title: "Laptop offer updated", description: "Laptop offer has been updated successfully" });
       } else {
         console.log('[ManageUserApp.handleSaveLaptopOffer] Creating new laptop offer');
-        await createLaptopOffer(data);
+        await createLaptopOffer({
+          ...data,
+          sort: 0,
+          discountPercent: Math.round(((data.price - data.discounted) / data.price) * 100),
+        });
         toast({ title: "Laptop offer created", description: "New laptop offer has been added" });
       }
       
@@ -883,7 +862,7 @@ export default function ManageUserApp() {
                           variant="ghost" 
                           size="sm"
                           onClick={() => handleDeleteLaptopOffer(laptopOffer.id)}
-                          aria-label={`Delete laptop offer ${laptopOffer.title}`}
+                          aria-label={`Delete laptop offer ${laptopOffer.model}`}
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                           <span className="sr-only">Delete</span>

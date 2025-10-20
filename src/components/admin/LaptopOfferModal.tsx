@@ -16,7 +16,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import type { LaptopOffer } from "@/store/adminStore";
 
@@ -88,7 +87,6 @@ export function LaptopOfferModal({ open, onOpenChange, onSave, offer }: LaptopOf
     formState: { errors },
     watch,
     reset,
-    setValue,
   } = useForm<LaptopOfferFormData>({
     resolver: zodResolver(laptopOfferSchema as any),
     defaultValues: {
@@ -180,10 +178,6 @@ export function LaptopOfferModal({ open, onOpenChange, onSave, offer }: LaptopOf
         
         try {
           // Generate filename (same pattern as BannerModal)
-          const now = new Date();
-          const year = now.getFullYear();
-          const month = String(now.getMonth() + 1).padStart(2, '0');
-          const day = String(now.getDate()).padStart(2, '0');
           
           // Generate UUID-like string
           const uuid = crypto.randomUUID();
