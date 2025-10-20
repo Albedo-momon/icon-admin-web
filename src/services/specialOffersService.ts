@@ -27,13 +27,18 @@ export interface SpecialOfferResponse {
 }
 
 export class SpecialOfferError extends Error {
+  code: 'VALIDATION_ERROR' | 'NETWORK_ERROR' | 'AUTH_ERROR' | 'SERVER_ERROR' | 'NOT_FOUND';
+  originalError?: any;
+
   constructor(
     message: string,
-    public code: 'VALIDATION_ERROR' | 'NETWORK_ERROR' | 'AUTH_ERROR' | 'SERVER_ERROR' | 'NOT_FOUND',
-    public originalError?: any
+    code: 'VALIDATION_ERROR' | 'NETWORK_ERROR' | 'AUTH_ERROR' | 'SERVER_ERROR' | 'NOT_FOUND',
+    originalError?: any
   ) {
     super(message);
     this.name = 'SpecialOfferError';
+    this.code = code;
+    this.originalError = originalError;
   }
 }
 

@@ -3,16 +3,13 @@ import { SLAComplianceChart } from "@/components/dashboard/SLAComplianceChart";
 import { QuickStats } from "@/components/dashboard/QuickStats";
 import { RequestsOverTimeChart } from "@/components/dashboard/RequestsOverTimeChart";
 import { TypeSwitch } from "@/components/dashboard/TypeSwitch";
-import { StatusMicroChips } from "@/components/dashboard/StatusMicroChips";
 import { AttentionNeededCard } from "@/components/dashboard/AttentionNeededCard";
 import { useDashboardStore } from "@/stores/dashboardStore";
 import { 
   Users, 
   CheckCircle, 
   XCircle, 
-  UserCheck,
-  Star,
-  Gift
+  UserCheck
 } from "lucide-react";
 
 export default function Dashboard() {

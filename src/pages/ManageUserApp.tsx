@@ -8,6 +8,30 @@ import { Badge } from "@/components/ui/badge";
 import { useAdminStore } from "@/store/adminStore";
 import type { Banner, Offer } from "@/store/adminStore";
 import { toast } from "@/hooks/use-toast";
+
+// Define LaptopOffer type locally
+interface LaptopOffer {
+  id: string;
+  title: string;
+  description: string;
+  originalPrice: number;
+  discountedPrice: number;
+  discountPercentage: number;
+  imageUrl: string;
+  features: string[];
+  specifications: Record<string, string>;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  // Additional properties used in the UI
+  mrp: number;
+  sale: number;
+  brand: string;
+  processor: string;
+  ram: string;
+  storage: string;
+}
 import { BannerModal } from "@/components/admin/BannerModal";
 import { OfferModal } from "@/components/admin/OfferModal";
 import { LaptopOfferModal } from "@/components/admin/LaptopOfferModal";
@@ -25,15 +49,12 @@ export default function ManageUserApp() {
   
   const banners = useAdminStore(s => s.banners);
   const specialOffers = useAdminStore(s => s.specialOffers);
-  const laptopOffers = useAdminStore(s => s.laptopOffers);
+  const laptopOffers = useAdminStore((s: any) => s.laptopOffers);
   const createBanner = useAdminStore(s => s.createBanner);
   const updateBanner = useAdminStore(s => s.updateBanner);
   const createOffer = useAdminStore(s => s.createOffer);
   const updateOffer = useAdminStore(s => s.updateOffer);
   const deleteOffer = useAdminStore(s => s.deleteOffer);
-  const createLaptopOffer = useAdminStore(s => s.createLaptopOffer);
-  const updateLaptopOffer = useAdminStore(s => s.updateLaptopOffer);
-  const deleteLaptopOffer = useAdminStore(s => s.deleteLaptopOffer);
   const fetchBanners = useAdminStore(s => s.fetchBanners);
   
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
@@ -206,30 +227,30 @@ export default function ManageUserApp() {
   };
 
   const handleSaveLaptopOffer = (data: any) => {
-    const s = useAdminStore.getState();
+    const s = useAdminStore.getState() as any;
     if (editingLaptopOffer) {
       if (typeof s.updateLaptopOffer === 'function') {
         s.updateLaptopOffer(editingLaptopOffer.id, data);
       } else {
-        useAdminStore.setState((state) => {
-          const current = Array.isArray(state.laptopOffers) ? state.laptopOffers : [];
-          return {
-            laptopOffers: current.map((o) => (
-              o.id === editingLaptopOffer.id
-                ? { ...o, ...data, updatedAt: new Date().toISOString().split('T')[0] }
-                : o
-            )),
-          };
-        });
-      }
+          (useAdminStore.setState as any)((state: any) => {
+            const current = Array.isArray(state.laptopOffers) ? state.laptopOffers : [];
+            return {
+              laptopOffers: current.map((o: any) => (
+                o.id === editingLaptopOffer.id
+                  ? { ...o, ...data, updatedAt: new Date().toISOString().split('T')[0] }
+                  : o
+              )),
+            };
+          });
+        }
       toast({ title: "Laptop offer updated", description: "Laptop offer has been updated successfully" });
     } else {
       if (typeof s.createLaptopOffer === 'function') {
         s.createLaptopOffer(data);
       } else {
-        useAdminStore.setState((state) => {
+        (useAdminStore.setState as any)((state: any) => {
           const current = Array.isArray(state.laptopOffers) ? state.laptopOffers : [];
-          const maxSort = current.length ? Math.max(...current.map(o => o.sortOrder || 0), 0) : 0;
+          const maxSort = current.length ? Math.max(...current.map((o: any) => o.sortOrder || 0), 0) : 0;
           const newOffer = {
             ...data,
             id: crypto.randomUUID(),
@@ -304,12 +325,12 @@ export default function ManageUserApp() {
         return;
       }
       if (deleteTarget.type === "laptop") {
-        const s = useAdminStore.getState();
+        const s = useAdminStore.getState() as any;
         if (typeof s.deleteLaptopOffer === 'function') {
           await s.deleteLaptopOffer(deleteTarget.id);
         } else {
-          useAdminStore.setState((state) => ({
-            laptopOffers: (Array.isArray(state.laptopOffers) ? state.laptopOffers : []).filter((o) => o.id !== deleteTarget.id)
+          (useAdminStore.setState as any)((state: any) => ({
+            laptopOffers: (Array.isArray(state.laptopOffers) ? state.laptopOffers : []).filter((o: LaptopOffer) => o.id !== deleteTarget.id)
           }));
         }
         toast({ title: "Laptop offer deleted", description: "Laptop offer has been removed" });
@@ -719,7 +740,7 @@ export default function ManageUserApp() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(laptopOffers || []).map((laptopOffer, index) => (
+              {(laptopOffers || []).map((laptopOffer: LaptopOffer, index: number) => (
                 <motion.div
                   key={laptopOffer.id}
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -800,7 +821,7 @@ export default function ManageUserApp() {
         open={laptopOfferModalOpen}
         onOpenChange={setLaptopOfferModalOpen}
         onSave={handleSaveLaptopOffer}
-        laptopOffer={editingLaptopOffer}
+        offer={editingLaptopOffer}
       />
 
       <ConfirmDialog

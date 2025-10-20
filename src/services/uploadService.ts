@@ -20,13 +20,18 @@ export interface UploadOptions {
 }
 
 export class UploadError extends Error {
+  code: 'PRESIGN_FAILED' | 'UPLOAD_FAILED' | 'INVALID_FILE' | 'NETWORK_ERROR' | 'ABORTED';
+  originalError?: any;
+
   constructor(
     message: string,
-    public code: 'PRESIGN_FAILED' | 'UPLOAD_FAILED' | 'INVALID_FILE' | 'NETWORK_ERROR' | 'ABORTED',
-    public originalError?: any
+    code: 'PRESIGN_FAILED' | 'UPLOAD_FAILED' | 'INVALID_FILE' | 'NETWORK_ERROR' | 'ABORTED',
+    originalError?: any
   ) {
     super(message);
     this.name = 'UploadError';
+    this.code = code;
+    this.originalError = originalError;
   }
 }
 

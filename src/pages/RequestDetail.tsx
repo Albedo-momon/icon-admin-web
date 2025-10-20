@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   ArrowLeft,
   MoreHorizontal,
@@ -8,24 +7,14 @@ import {
   X,
   Settings,
   User,
-  MapPin,
-  Calendar,
-  Clock,
   MessageSquare,
-  Star,
-  Plus,
-  Edit,
-  Trash2,
-  ExternalLink,
-  Send
+  ExternalLink
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,11 +22,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { StatusChip, PriorityChip } from "@/components/ui/Chips";
-import { Timeline, StatusTimeline } from "@/components/ui/Timeline";
+import { StatusChip } from "@/components/ui/Chips";
+import { StatusTimeline } from "@/components/ui/Timeline";
 import { NotesList } from "@/components/ui/NotesList";
 import { FeedbackCard } from "@/components/ui/FeedbackCard";
-import { useRequestsStore, type RequestDetail, type JobType, type PrimaryStatus, type TimelineEvent } from "@/stores/requestsStore";
+import { useRequestsStore, type RequestDetail, type JobType, type PrimaryStatus } from "@/stores/requestsStore";
 import ReassignModal from "@/components/requests/ReassignModal";
 import CancelModal from "@/components/requests/CancelModal";
 import ChangeStatusModal from "@/components/requests/ChangeStatusModal";
@@ -70,13 +59,12 @@ export default function RequestDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "overview";
-  const focusedEventId = searchParams.get("focus");
+  const focusedEventId = searchParams.get("focus") || undefined;
   const { 
     loadRequestDetail, 
     reassignRequest, 
     cancelRequest, 
-    changeStatus,
-    addNote 
+    changeStatus
   } = useRequestsStore();
 
   const [request, setRequest] = useState<RequestDetail | null>(null);
@@ -109,9 +97,9 @@ export default function RequestDetail() {
     }
   };
 
-  const handleCancelConfirm = async (reason: string, comment?: string) => {
+  const handleCancelConfirm = async (reason: string) => {
     if (request) {
-      await cancelRequest(request.id, reason, comment);
+      await cancelRequest(request.id, reason);
       setShowCancelModal(false);
       // Refresh request data
       const updatedRequest = await loadRequestDetail(request.id);
@@ -129,19 +117,6 @@ export default function RequestDetail() {
       }
     };
 
-  const handleStatusChange = async (status: PrimaryStatus) => {
-    if (!request) return;
-    
-    try {
-      await changeStatus(request.id, status);
-      const updatedRequest = await loadRequestDetail(request.id);
-      if (updatedRequest) setRequest(updatedRequest);
-      setShowChangeStatusModal(false);
-    } catch (error) {
-      console.error('Failed to change status:', error);
-    }
-  };
-  
   useEffect(() => {
     const loadRequest = async () => {
       if (!id) return;
@@ -430,20 +405,20 @@ export default function RequestDetail() {
             notes={request.notes.map(note => ({
               id: note.id || Math.random().toString(),
               content: note.content,
-              author: note.author?.name || 'Admin',
-              createdAt: new Date(note.createdAt),
-              canEdit: true,
-              canDelete: true
+              author: {
+                name: note.author || 'Admin'
+              },
+              createdAt: new Date(note.createdAt)
             }))}
-            onAddNote={(content) => {
+            onAddNote={async (content) => {
               // Add note logic here
               console.log('Adding note:', content);
             }}
-            onEditNote={(id, content) => {
+            onUpdateNote={async (id, content) => {
               // Edit note logic here
               console.log('Editing note:', id, content);
             }}
-            onDeleteNote={(id) => {
+            onDeleteNote={async (id) => {
               // Delete note logic here
               console.log('Deleting note:', id);
             }}
@@ -457,9 +432,12 @@ export default function RequestDetail() {
                 id: '1',
                 rating: request.feedback.rating,
                 comment: request.feedback.comment || '',
-                customerName: request.user.name,
+                customer: {
+                  name: request.user.name,
+                  id: request.user.id,
+                  email: request.user.email
+                },
                 createdAt: new Date(request.updatedAt),
-                helpful: 0,
                 tags: []
               }}
             />

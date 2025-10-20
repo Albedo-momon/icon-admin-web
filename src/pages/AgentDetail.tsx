@@ -1,20 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   ArrowLeft,
   MoreHorizontal,
   User,
   Mail,
   Phone,
-  Calendar,
   Star,
-  TrendingUp,
   MessageSquare,
   Edit,
   Trash2,
-  Shield,
-  Activity,
   Award,
   Clock,
   CheckCircle,
@@ -24,12 +19,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { JobType } from "../stores/requestsStore";
+import { type JobType } from "../stores/requestsStore";
 import { JobTypeBadge } from "./RequestsList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,11 +33,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DataTable } from "@/components/ui/DataTable";
-import { useAgentsStore, type Agent, type JobHistory, type AgentPerformance, type AgentFeedback } from "@/stores/agentsStore";
+import { useAgentsStore } from "@/stores/agentsStore";
+import { type Agent, type JobHistory, type AgentPerformance, type AgentFeedback, type UpdateAgentData } from "@/types/agent";
 import EditAgentModal from "@/components/agents/EditAgentModal";
 import DeleteAgentModal from "@/components/agents/DeleteAgentModal";
 import { cn } from "@/lib/utils";
-import { JobHistory } from "@/types/agent";
 
 // Status chip component for agents
 const StatusChip = ({ active }: { active: boolean }) => {
@@ -201,11 +196,11 @@ export default function AgentDetail() {
     setShowEditModal(true);
   };
 
-  const handleEditSave = async (updatedAgent: Partial<Agent>) => {
+  const handleEditSave = async (agentId: string, updatedAgent: UpdateAgentData) => {
     if (!agent) return;
     
     try {
-      await updateAgent(agent.id, updatedAgent);
+      await updateAgent(agentId, updatedAgent);
       setAgent({ ...agent, ...updatedAgent });
       setShowEditModal(false);
     } catch (err) {
@@ -266,7 +261,7 @@ export default function AgentDetail() {
       key: "status",
       label: "Status",
       sortable: true,
-      render: (value: string) => <JobStatusBadge status={value} />,
+      render: (value: string) => <JobStatusBadge status={value as JobHistory["status"]} />,
     },
     {
       key: "completedAt",
@@ -459,7 +454,7 @@ export default function AgentDetail() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {agent.tags.map((tag, index) => (
+                  {agent.tags.map((tag: string, index: number) => (
                     <Badge 
                       key={index} 
                       variant="secondary"
@@ -487,8 +482,6 @@ export default function AgentDetail() {
               <DataTable
                 data={jobHistory}
                 columns={jobHistoryColumns}
-                searchKey="requestId"
-                searchPlaceholder="Search by request ID..."
               />
             </CardContent>
           </Card>
@@ -540,7 +533,7 @@ export default function AgentDetail() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Avg. Resolution</p>
-                      <p className="text-2xl font-bold">{performance.avgResolutionTime}h</p>
+                      <p className="text-2xl font-bold">{performance.avgCompletionTime}h</p>
                     </div>
                     <BarChart3 className="h-8 w-8 text-blue-500" />
                   </div>
@@ -597,7 +590,7 @@ export default function AgentDetail() {
           agent={agent}
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
-          onSave={handleEditSave}
+          onConfirm={handleEditSave}
         />
       )}
 
@@ -618,12 +611,13 @@ const JobStatusBadge = ({ status }: { status: JobHistory["status"] }) => {
   const variants = {
     COMPLETED: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
     CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-    "IN PROGRESS": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    IN_PROGRESS: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
     PENDING: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+    ACCEPTED: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
   };
 
   return (
-    <Badge className={cn("font-medium", variants[status])}>
+    <Badge className={cn("font-medium", variants[status as keyof typeof variants])}>
       {status}
     </Badge>
   );

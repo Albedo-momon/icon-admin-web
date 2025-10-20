@@ -1,18 +1,16 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Search, Bell, Check, X, MoreHorizontal, Filter } from "lucide-react";
+import { Search, Bell, Check, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNotificationsStore } from "@/stores/notificationsStore";
-import { NotificationKind } from "@/stores/notificationsStore";
-import { formatDistanceToNow } from "date-fns";
 import { NotificationItem } from "@/components/notifications/NotificationItem";
 
 const NotificationsPage = () => {
-  const { items, markRead, markAllRead, toggleRead, remove, clearAll, push } = useNotificationsStore();
+  const { items, markRead, markAllRead, toggleRead, remove, clearAll } = useNotificationsStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());

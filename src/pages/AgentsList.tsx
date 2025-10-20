@@ -1,50 +1,28 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Search, 
   Plus, 
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
   UserCheck,
   UserX,
   Users
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DataTable, type Column, type RowAction } from "@/components/ui/DataTable";
 import { FilterBar, type FilterGroup } from "@/components/ui/FilterBar";
 import { CreateAgentModal } from "@/components/agents/CreateAgentModal";
 import EditAgentModal from "@/components/agents/EditAgentModal";
 import DeleteAgentModal from "@/components/agents/DeleteAgentModal";
 import { useAgentsStore } from "@/stores/agentsStore";
-import { Agent } from "@/types/agent";
+import type { Agent } from "@/types/agent";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function AgentsList() {
   const navigate = useNavigate();
   const {
-    agents,
     filteredAgents,
     filters,
     pagination,
@@ -125,10 +103,10 @@ export default function AgentsList() {
 
   const handleFiltersChange = (newFilters: Record<string, string[]>) => {
     setFilters({
-      active: newFilters.active?.[0] || "ALL",
-      operationalStatus: newFilters.operationalStatus?.[0] || "ALL",
-      rating: newFilters.rating?.[0] || "ALL",
-      dateAdded: newFilters.dateAdded?.[0] || "ALL",
+      active: (newFilters.active?.[0] || "ALL") as "ALL" | "ACTIVE" | "INACTIVE",
+      operationalStatus: (newFilters.operationalStatus?.[0] || "ALL") as "ALL" | "FREE" | "BUSY",
+      rating: (newFilters.rating?.[0] || "ALL") as "ALL" | "HIGH" | "MEDIUM" | "LOW",
+      dateAdded: (newFilters.dateAdded?.[0] || "ALL") as "ALL" | "TODAY" | "WEEK" | "MONTH",
     });
   };
 
@@ -299,19 +277,6 @@ export default function AgentsList() {
       toast.success(`${agentIds.length} agents deactivated successfully`);
     } catch (error) {
       toast.error("Failed to deactivate agents");
-    }
-  };
-
-  const handleDeleteAgent = async () => {
-    if (!selectedAgent) return;
-    
-    try {
-      await deleteAgent(selectedAgent.id);
-      setShowDeleteModal(false);
-      setSelectedAgent(null);
-      toast.success("Agent deleted successfully");
-    } catch (error) {
-      toast.error("Failed to delete agent");
     }
   };
 
