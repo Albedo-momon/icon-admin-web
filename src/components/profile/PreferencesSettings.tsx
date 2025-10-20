@@ -3,14 +3,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { useThemeStore } from "@/stores/themeStore";
 
 export function PreferencesSettings() {
-  const { theme, setTheme } = useThemeStore();
   const [language, setLanguage] = useState("en");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [inAppNotifications, setInAppNotifications] = useState(true);
@@ -37,13 +34,6 @@ export function PreferencesSettings() {
     });
   };
 
-  const handleThemeChange = (newTheme: "system" | "light" | "dark") => {
-    setTheme(newTheme);
-    toast.success("Theme updated!", {
-      description: `Switched to ${newTheme} theme.`,
-    });
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -51,38 +41,6 @@ export function PreferencesSettings() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-card-foreground">Appearance</CardTitle>
-          <CardDescription className="text-muted-foreground">Customize how the application looks for you.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <Label className="text-card-foreground">Theme</Label>
-            <RadioGroup value={theme} onValueChange={handleThemeChange}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="system" id="system" className="border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-                <Label htmlFor="system" className="font-normal cursor-pointer text-card-foreground">
-                  System
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="light" id="light" className="border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-                <Label htmlFor="light" className="font-normal cursor-pointer text-card-foreground">
-                  Light
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="dark" id="dark" className="border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-                <Label htmlFor="dark" className="font-normal cursor-pointer text-card-foreground">
-                  Dark
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-        </CardContent>
-      </Card>
-
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-card-foreground">Language & Region</CardTitle>
