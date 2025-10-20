@@ -61,7 +61,7 @@ type OfferFormData = z.infer<typeof offerSchema>;
 interface OfferModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: { title: string; imageUrl: string; mrp: number; sale: number; isActive: boolean }) => void;
+  onSave: (data: { id?: string; title: string; imageUrl: string; mrp: number; sale: number; isActive: boolean }) => void;
   offer?: Offer;
 }
 
@@ -204,55 +204,58 @@ export function OfferModal({ open, onOpenChange, onSave, offer }: OfferModalProp
         sortOrder: 0, // Default sort order
       };
 
+      const isNumericId = offer?.id ? /^\d+$/.test(String(offer.id)) : false;
+      console.debug('[OfferModal.submit] prepared', { offerId: offer?.id, isNumericId, offerData });
+      
       try {
         if (offer?.id) {
-          await updateSpecialOffer(offer.id, offerData);
+          console.debug('[OfferModal.submit] calling updateSpecialOffer', { id: offer.id });
+          const updated = await updateSpecialOffer(offer.id, offerData);
+          console.debug('[OfferModal.submit] updateSpecialOffer ok', updated);
           toast.success("Special offer updated successfully!");
+          setSaveState('success');
+          onSave({
+            id: updated.id,
+            title: data.title,
+            imageUrl: finalImageUrl,
+            mrp: data.mrp,
+            sale: data.sale,
+            isActive: data.isActive,
+          });
         } else {
-          await createSpecialOffer(offerData);
+          console.debug('[OfferModal.submit] calling createSpecialOffer', { offerData });
+          const created = await createSpecialOffer(offerData);
+          console.debug('[OfferModal.submit] createSpecialOffer ok', created);
           toast.success("Special offer created successfully!");
+          setSaveState('success');
+          onSave({
+            id: created.id,
+            title: data.title,
+            imageUrl: finalImageUrl,
+            mrp: data.mrp,
+            sale: data.sale,
+            isActive: data.isActive,
+          });
         }
-
-        setSaveState('success');
-        
-        // Call the original onSave callback for compatibility
-        onSave({
-          title: data.title,
-          imageUrl: finalImageUrl,
-          mrp: data.mrp,
-          sale: data.sale,
-          isActive: data.isActive,
-        });
-        
         onOpenChange(false);
-        
       } catch (dbError) {
-        setSaveState('error');
-        
-        if (dbError instanceof SpecialOfferError) {
-          switch (dbError.code) {
-            case 'AUTH_ERROR':
-              toast.error("Session expired. Please log in again.");
-              break;
-            case 'VALIDATION_ERROR':
-              toast.error(dbError.message);
-              break;
-            case 'NOT_FOUND':
-              toast.error("Special offer not found. Please refresh and try again.");
-              break;
-            case 'NETWORK_ERROR':
-            case 'SERVER_ERROR':
-              if (finalImageUrl && finalImageUrl !== (offer?.imageUrl || "")) {
-                toast.error("Saved image, but record save failed. Click Save again.");
-              } else {
-                toast.error("Can't reach server. Please try again.");
-              }
-              break;
-            default:
-              toast.error("Failed to save special offer. Please try again.");
-          }
+        if (dbError instanceof SpecialOfferError && dbError.code === 'NOT_FOUND' && isNumericId) {
+          console.warn('[OfferModal.submit] update failed with NOT_FOUND for numeric id; creating new record', { id: offer?.id });
+          const created = await createSpecialOffer(offerData);
+          console.debug('[OfferModal.submit] fallback create ok', created);
+          toast.success("Special offer created successfully!");
+          setSaveState('success');
+          onSave({
+            id: created.id,
+            title: data.title,
+            imageUrl: finalImageUrl,
+            mrp: data.mrp,
+            sale: data.sale,
+            isActive: data.isActive,
+          });
+          onOpenChange(false);
         } else {
-          toast.error("Failed to save special offer. Please try again.");
+          throw dbError;
         }
       }
       

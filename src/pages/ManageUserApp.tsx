@@ -126,12 +126,66 @@ export default function ManageUserApp() {
     setOfferModalOpen(true);
   };
 
-  const handleSaveOffer = (data: { title: string; imageUrl: string; mrp: number; sale: number; isActive: boolean }) => {
+  const handleSaveOffer = (data: { id?: string; title: string; imageUrl: string; mrp: number; sale: number; isActive: boolean }) => {
     if (editingOffer) {
-      updateOffer(editingOffer.id, data);
+      if (data.id && data.id !== editingOffer.id) {
+        console.warn('[ManageUserApp] syncing offer id after server update', { oldId: editingOffer.id, newId: data.id });
+        useAdminStore.setState((state) => ({
+          specialOffers: state.specialOffers.map((o) =>
+            o.id === editingOffer.id
+              ? {
+                  ...o,
+                  id: data.id!,
+                  title: data.title,
+                  imageUrl: data.imageUrl,
+                  mrp: data.mrp,
+                  sale: data.sale,
+                  isActive: data.isActive,
+                  updatedAt: new Date().toISOString().split('T')[0],
+                }
+              : o
+          ),
+        }));
+      } else {
+        updateOffer(editingOffer.id, {
+          title: data.title,
+          imageUrl: data.imageUrl,
+          mrp: data.mrp,
+          sale: data.sale,
+          isActive: data.isActive,
+        });
+      }
       toast({ title: "Offer updated", description: "Special offer has been updated successfully" });
     } else {
-      createOffer(data);
+      if (data.id) {
+        console.debug('[ManageUserApp] adding offer with server id', { id: data.id });
+        useAdminStore.setState((state) => {
+          const maxSort = Math.max(0, ...state.specialOffers.map((o) => o.sortOrder));
+          return {
+            specialOffers: [
+              ...state.specialOffers,
+              {
+                id: data.id!,
+                title: data.title,
+                imageUrl: data.imageUrl,
+                mrp: data.mrp,
+                sale: data.sale,
+                isActive: data.isActive,
+                sortOrder: maxSort + 1,
+                updatedAt: new Date().toISOString().split('T')[0],
+              },
+            ],
+          };
+        });
+      } else {
+        createOffer({
+          title: data.title,
+          imageUrl: data.imageUrl,
+          mrp: data.mrp,
+          sale: data.sale,
+          isActive: data.isActive,
+        });
+      }
       toast({ title: "Offer created", description: "New special offer has been added" });
     }
   };
@@ -178,7 +232,7 @@ export default function ManageUserApp() {
           const maxSort = current.length ? Math.max(...current.map(o => o.sortOrder || 0), 0) : 0;
           const newOffer = {
             ...data,
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             sortOrder: maxSort + 1,
             updatedAt: new Date().toISOString().split('T')[0],
           };

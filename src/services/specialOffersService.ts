@@ -73,10 +73,12 @@ export async function createSpecialOffer(data: SpecialOfferData): Promise<Specia
  */
 export async function updateSpecialOffer(id: string, data: Partial<SpecialOfferData>): Promise<SpecialOfferResponse> {
   try {
+    console.debug('[specialOffersService.update] request', { id, data });
     const response = await http.patch(`/admin/special-offers/${id}`, data);
+    console.debug('[specialOffersService.update] response', response.data);
     return response.data;
   } catch (error: any) {
-    console.error('Update special offer failed:', error);
+    console.error('Update special offer failed:', { id, data, error, status: error?.response?.status, server: error?.response?.data });
     
     if (error.response?.status === 401 || error.response?.status === 403) {
       throw new SpecialOfferError('Session expired. Please log in again.', 'AUTH_ERROR', error);
