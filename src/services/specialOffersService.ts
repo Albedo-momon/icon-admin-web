@@ -143,6 +143,38 @@ export async function getSpecialOffers(params?: {
 }
 
 /**
+ * Deletes a special offer by ID
+ */
+export async function deleteSpecialOffer(id: string): Promise<{ ok: boolean; id: string }> {
+  try {
+    console.log('[specialOffersService.deleteSpecialOffer] Deleting offer with id:', id);
+    const response = await http.delete(`/admin/special-offers/${id}`);
+    console.log('[specialOffersService.deleteSpecialOffer] Delete response:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Delete special offer failed:', { id, error, status: error?.response?.status, server: error?.response?.data });
+    
+    if (error.response?.status === 404) {
+      throw new SpecialOfferError('Special offer not found', 'NOT_FOUND', error);
+    }
+    
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      throw new SpecialOfferError('Session expired. Please log in again.', 'AUTH_ERROR', error);
+    }
+    
+    if (error.response?.status >= 500) {
+      throw new SpecialOfferError("Can't reach server. Please try again.", 'SERVER_ERROR', error);
+    }
+    
+    if (!error.response) {
+      throw new SpecialOfferError("Can't reach server. Please check your connection.", 'NETWORK_ERROR', error);
+    }
+    
+    throw new SpecialOfferError('Failed to delete special offer', 'SERVER_ERROR', error);
+  }
+}
+
+/**
  * Gets a special offer by ID
  */
 export async function getSpecialOffer(id: string): Promise<SpecialOfferResponse> {

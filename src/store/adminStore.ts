@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { env } from '@/env';
 import { http } from '@/api/client';
-import { getSpecialOffers } from '@/services/specialOffersService';
+import { getSpecialOffers, deleteSpecialOffer } from '@/services/specialOffersService';
 
 export type Banner = {
   id: string;
@@ -55,7 +55,7 @@ interface AdminStore {
   // Offer methods
   createOffer: (offer: Omit<Offer, 'id' | 'sortOrder' | 'updatedAt'>) => void;
   updateOffer: (id: string, offer: Partial<Offer>) => void;
-  deleteOffer: (id: string) => void;
+  deleteOffer: (id: string) => Promise<void>;
   reorderOffers: (offers: Offer[]) => void;
   fetchSpecialOffers: (params?: { status?: 'ACTIVE' | 'INACTIVE' | 'ALL'; q?: string; limit?: number; offset?: number; orderBy?: string }) => Promise<{ items: Offer[]; total: number; limit: number; offset: number }>;
   
@@ -256,10 +256,35 @@ export const useAdminStore = create<AdminStore>()(
           ),
         })),
       
-      deleteOffer: (id) =>
-        set((state) => ({
-          specialOffers: renormalizeSortOrder(state.specialOffers.filter((o) => o.id !== id)),
-        })),
+      deleteOffer: async (id) => {
+        console.log('[adminStore.deleteOffer] Deleting offer with id:', id);
+        
+        if (env.useMock) {
+          set((state) => ({
+            specialOffers: renormalizeSortOrder(state.specialOffers.filter((o) => o.id !== id)),
+          }));
+          return;
+        }
+        
+        try {
+          console.log('[adminStore.deleteOffer] Making API call to delete offer...');
+          const response = await deleteSpecialOffer(id);
+          console.log('[adminStore.deleteOffer] API delete response:', response);
+          
+          if (response && response.ok) {
+            set((state) => ({
+              specialOffers: renormalizeSortOrder(state.specialOffers.filter((o) => o.id !== id)),
+            }));
+            console.log('[adminStore.deleteOffer] Successfully deleted offer from store');
+          } else {
+            console.error('[adminStore.deleteOffer] Delete API call failed:', response);
+            throw new Error('Failed to delete special offer');
+          }
+        } catch (error) {
+          console.error('[adminStore.deleteOffer] Error deleting offer:', error);
+          throw error;
+        }
+      },
       
       reorderOffers: (offers) =>
         set({ specialOffers: renormalizeSortOrder(offers) }),

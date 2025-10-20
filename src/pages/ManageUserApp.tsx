@@ -346,10 +346,15 @@ export default function ManageUserApp() {
     if (!deleteTarget) return;
     try {
       if (deleteTarget.type === "offer") {
-        deleteOffer(deleteTarget.id);
+        console.log('[ManageUserApp.confirmDelete] Deleting special offer:', deleteTarget.id);
+        setDeletingId(deleteTarget.id);
+        await deleteOffer(deleteTarget.id);
         toast({ title: "Offer deleted", description: "Special offer has been removed" });
         setDeleteDialogOpen(false);
         setDeleteTarget(null);
+        // Refresh the special offers query
+        await queryClient.invalidateQueries({ queryKey: ["specialOffers"] });
+        await specialOffersQuery.refetch();
         return;
       }
       if (deleteTarget.type === "laptop") {
