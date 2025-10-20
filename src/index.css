@@ -63,7 +63,7 @@
   }
 
   .dark {
-    --background: 222 47% 11%;
+    --background: 210 25% 18%;
     --foreground: 210 40% 98%;
 
     --card: 210 25% 14%;
@@ -117,10 +117,6 @@
     --text-heading: 210 40% 98%;
     --text-body: 210 40% 98%;
     --text-muted: 215 20% 65%;
-    
-    /* Card colors for dark mode */
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
   }
 }
 
