@@ -93,6 +93,21 @@ const renormalizeSortOrder = <T extends { sortOrder: number }>(items: T[]): T[] 
     .map((item, index) => ({ ...item, sortOrder: index + 1 }));
 };
 
+const cleanImageUrl = (url: string | undefined | null): string => {
+  const fallback = 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400';
+  
+  if (!url) return fallback;
+  
+  // Filter out placeholder.com URLs and other invalid URLs
+  if (url.includes('via.placeholder.com') || 
+      url.includes('placeholder.com') || 
+      !url.startsWith('https://')) {
+    return fallback;
+  }
+  
+  return url;
+};
+
 export const useAdminStore = create<AdminStore>()(
   persist(
     (set) => ({
@@ -463,16 +478,37 @@ export const useAdminStore = create<AdminStore>()(
         
         try {
           console.log('[adminStore.createLaptopOffer] Making API call...');
-          const response = await createLaptopOffer({
-            model: offer.model,
-            price: offer.price,
-            discounted: offer.discounted,
-            status: offer.status,
-            imageUrl: offer.imageUrl || 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400', // Required by backend
-            specs: offer.specs,
+          // Validate and clean data before sending to API
+          const apiData = {
+            model: String(offer.model || '').trim(),
+            price: Math.max(1, Math.floor(Number(offer.price) || 0)), // Ensure positive integer
+            discounted: Math.max(0, Math.floor(Number(offer.discounted) || 0)), // Ensure non-negative integer
+            status: (offer.status === 'ACTIVE' || offer.status === 'INACTIVE') ? offer.status : 'ACTIVE' as const,
+            imageUrl: cleanImageUrl(offer.imageUrl) || 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400', // Required by backend
+            specs: offer.specs || undefined,
+          };
+          
+          // Additional validation
+          if (apiData.discounted > apiData.price) {
+            console.warn('[adminStore.createLaptopOffer] Discounted price is greater than price, adjusting...');
+            apiData.discounted = apiData.price;
+          }
+          console.log('[adminStore.createLaptopOffer] API data being sent:', apiData);
+          console.log('[adminStore.createLaptopOffer] Data types:', {
+            model: typeof apiData.model, modelValue: apiData.model,
+            price: typeof apiData.price, priceValue: apiData.price,
+            discounted: typeof apiData.discounted, discountedValue: apiData.discounted,
+            status: typeof apiData.status, statusValue: apiData.status,
+            imageUrl: typeof apiData.imageUrl, imageUrlValue: apiData.imageUrl,
+            specs: typeof apiData.specs, specsValue: apiData.specs
           });
+          console.log('[adminStore.createLaptopOffer] JSON payload:', JSON.stringify(apiData, null, 2));
+          const response = await createLaptopOffer(apiData);
           
           console.log('[adminStore.createLaptopOffer] API response:', response);
+          
+          // Ensure imageUrl is valid
+          const imageUrl = cleanImageUrl(response.imageUrl);
           
           const newOffer: LaptopOffer = {
             id: response.id,
@@ -481,7 +517,7 @@ export const useAdminStore = create<AdminStore>()(
             discounted: response.discounted,
             discountPercent: response.discountPercent,
             status: response.status,
-            imageUrl: response.imageUrl,
+            imageUrl: imageUrl,
             specs: response.specs,
             sort: response.sortOrder || response.sort || 0,
             createdAt: response.createdAt,
@@ -525,6 +561,9 @@ export const useAdminStore = create<AdminStore>()(
           const response = await updateLaptopOffer(id, updateData);
           console.log('[adminStore.updateLaptopOffer] API response:', response);
           
+          // Ensure imageUrl is valid
+          const imageUrl = cleanImageUrl(response.imageUrl);
+          
           set((state) => ({
             laptopOffers: state.laptopOffers.map((o) =>
               o.id === id ? {
@@ -534,7 +573,7 @@ export const useAdminStore = create<AdminStore>()(
                 discounted: response.discounted,
                 discountPercent: response.discountPercent,
                 status: response.status,
-                imageUrl: response.imageUrl,
+                imageUrl: imageUrl,
                 specs: response.specs,
                 sort: response.sortOrder || response.sort || o.sort,
                 updatedAt: response.updatedAt,
@@ -643,19 +682,24 @@ export const useAdminStore = create<AdminStore>()(
             return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
           };
 
-          const normalized: LaptopOffer[] = response.items.map((item: any) => ({
-            id: String(item.id ?? item.offerId ?? item.uuid ?? Date.now()),
-            model: item.productName ?? item.model ?? 'Untitled', // Backend stores as productName
-            price: Number(item.price ?? 0),
-            discounted: Number(item.discounted ?? 0),
-            discountPercent: Number(item.discountPercent ?? 0),
-            status: (item.status ?? 'ACTIVE') as 'ACTIVE' | 'INACTIVE',
-            imageUrl: item.imageUrl ?? item.image ?? item.pictureUrl ?? 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400',
-            specs: item.specs ?? undefined,
-            sort: Number(item.sortOrder ?? item.sort ?? 0),
-            createdAt: normalizeDate(item.createdAt ?? item.created_at ?? item.created),
-            updatedAt: normalizeDate(item.updatedAt ?? item.updated_at ?? item.modifiedAt ?? item.lastUpdated),
-          }));
+          const normalized: LaptopOffer[] = response.items.map((item: any) => {
+            // Ensure imageUrl is a valid HTTPS URL
+            const imageUrl = cleanImageUrl(item.imageUrl ?? item.image ?? item.pictureUrl);
+            
+            return {
+              id: String(item.id ?? item.offerId ?? item.uuid ?? Date.now()),
+              model: item.productName ?? item.model ?? 'Untitled', // Backend stores as productName
+              price: Number(item.price ?? 0),
+              discounted: Number(item.discounted ?? 0),
+              discountPercent: Number(item.discountPercent ?? 0),
+              status: (item.status ?? 'ACTIVE') as 'ACTIVE' | 'INACTIVE',
+              imageUrl: imageUrl,
+              specs: item.specs ?? undefined,
+              sort: Number(item.sortOrder ?? item.sort ?? 0),
+              createdAt: normalizeDate(item.createdAt ?? item.created_at ?? item.created),
+              updatedAt: normalizeDate(item.updatedAt ?? item.updated_at ?? item.modifiedAt ?? item.lastUpdated),
+            };
+          });
 
           set({ laptopOffers: normalized });
           

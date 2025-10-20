@@ -82,18 +82,36 @@ export async function getLaptopOffers(params?: {
 export async function createLaptopOffer(data: LaptopOfferData): Promise<LaptopOfferResponse> {
   try {
     console.log('[laptopOffersService.createLaptopOffer] Creating offer with data:', data);
+    console.log('[laptopOffersService.createLaptopOffer] Data validation:', {
+      model: typeof data.model, modelLength: data.model?.length,
+      price: typeof data.price, priceValue: data.price,
+      discounted: typeof data.discounted, discountedValue: data.discounted,
+      status: data.status,
+      imageUrl: typeof data.imageUrl, imageUrlValue: data.imageUrl,
+      specs: data.specs
+    });
     const response = await http.post('/admin/laptop-offers', data);
     console.log('[laptopOffersService.createLaptopOffer] Create response:', response.data);
     return response.data;
   } catch (error: any) {
     console.error('Create laptop offer failed:', error);
+    console.error('Error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      config: error.config,
+      message: error.message
+    });
     
     if (error.response?.status === 401 || error.response?.status === 403) {
       throw new LaptopOfferError('Session expired. Please log in again.', 'AUTH_ERROR', error);
     }
     
     if (error.response?.status === 400) {
-      const message = error.response?.data?.error?.message || 'Invalid laptop offer data';
+      const message = error.response?.data?.error?.message || error.response?.data?.message || 'Invalid laptop offer data';
+      console.error('Backend validation error:', error.response?.data);
+      console.error('Full backend error response:', JSON.stringify(error.response?.data, null, 2));
+      console.error('Request payload that was sent:', JSON.stringify(data, null, 2));
       throw new LaptopOfferError(message, 'VALIDATION_ERROR', error);
     }
     
