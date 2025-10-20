@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, ImageIcon, Loader2, RefreshCcw } from "lucide-react";
+import { Plus, Pencil, Trash2, ImageIcon, Loader2, RefreshCcw, Eye } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "@/api/client";
@@ -47,6 +48,8 @@ export default function ManageUserApp() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'banner' | 'offer' | 'laptop'; id: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
   // Filters & pagination state
   const [searchParams, setSearchParams] = useSearchParams();
@@ -115,6 +118,11 @@ export default function ManageUserApp() {
   const handleDeleteBanner = (id: string) => {
     setDeleteTarget({ type: 'banner', id });
     setDeleteDialogOpen(true);
+  };
+
+  const handlePreviewBanner = (banner: Banner) => {
+    setPreviewImage({ url: banner.imageUrl, title: banner.title });
+    setPreviewModalOpen(true);
   };
 
   const handleNewOffer = () => {
@@ -622,6 +630,16 @@ export default function ManageUserApp() {
                             <Button 
                               variant="ghost" 
                               size="icon"
+                              onClick={() => handlePreviewBanner(banner)}
+                              disabled={deletingId === banner.id}
+                              aria-label={`Preview banner ${banner.title}`}
+                            >
+                              <Eye className="w-4 h-4" />
+                              <span className="sr-only">Preview</span>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
                               onClick={() => handleEditBanner(banner)}
                               disabled={deletingId === banner.id}
                               aria-label={`Edit banner ${banner.title}`}
@@ -913,6 +931,29 @@ export default function ManageUserApp() {
         loadingText={deleteTarget?.type === 'banner' ? 'Deleting banner and image...' : deleteTarget?.type === 'laptop' ? 'Deleting laptop offer...' : 'Deleting offer...'}
         onConfirm={confirmDelete}
       />
+
+      {/* Preview Modal */}
+      <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Banner Preview</DialogTitle>
+          </DialogHeader>
+          {previewImage && (
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-full max-h-[70vh] overflow-hidden rounded-lg">
+                <img
+                  src={previewImage.url}
+                  alt={previewImage.title}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="text-center">
+                <h3 className="font-semibold text-lg">{previewImage.title}</h3>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
