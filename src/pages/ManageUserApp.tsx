@@ -231,7 +231,19 @@ export default function ManageUserApp() {
     setLaptopOfferModalOpen(true);
   };
 
-  const handleSaveLaptopOffer = async (data: any) => {
+  const handleSaveLaptopOffer = async (data: { 
+    model: string; 
+    imageUrl: string; 
+    price: number; 
+    discounted: number; 
+    status: 'ACTIVE' | 'INACTIVE';
+    specs?: {
+      cpu?: string;
+      ram?: string;
+      storage?: string;
+      display?: string;
+    };
+  }) => {
     try {
       console.log('[ManageUserApp.handleSaveLaptopOffer] Saving laptop offer:', data);
       

@@ -199,17 +199,40 @@ export async function deleteLaptopOffer(id: string): Promise<{ ok: boolean; id: 
 /**
  * Gets presigned URL for image upload
  */
-export async function getPresignedUrl(key: string, contentType: string): Promise<PresignResponse> {
+export async function getPresignedUrl(filename: string, contentType: string): Promise<PresignResponse> {
   try {
-    console.log('[laptopOffersService.getPresignedUrl] Getting presigned URL for:', { key, contentType });
-    const response = await http.post('/uploads/presign', { key, contentType });
-    console.log('[laptopOffersService.getPresignedUrl] Presigned URL response:', response.data);
-    return response.data;
-  } catch (error: any) {
-    console.error('Get presigned URL failed:', { key, contentType, error });
+    console.log('[laptopOffersService.getPresignedUrl] Getting presigned URL for:', { filename, contentType });
     
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      throw new LaptopOfferError('Session expired. Please log in again.', 'AUTH_ERROR', error);
+    // Use the same approach as BannerModal - direct fetch with JWT token
+    const { getJWTToken } = await import('./jwtService');
+    const { env } = await import('../env');
+    
+    const token = await getJWTToken();
+    const response = await fetch(`${env.apiUrl}/uploads/presign`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        section: "laptop",
+        filename,
+        contentType 
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get presigned URL');
+    }
+
+    const data = await response.json();
+    console.log('[laptopOffersService.getPresignedUrl] Presigned URL response:', data);
+    return data;
+  } catch (error: any) {
+    console.error('Get presigned URL failed:', { filename, contentType, error });
+    
+    if (error.message?.includes('401') || error.message?.includes('403')) {
+      throw new LaptopOfferError('Could not get upload permission. Check your session.', 'AUTH_ERROR', error);
     }
     
     throw new LaptopOfferError('Failed to get upload permission', 'UPLOAD_ERROR', error);
