@@ -164,7 +164,6 @@ export default function ManageUserApp() {
           isActive: data.isActive,
         });
       }
-      toast({ title: "Offer updated", description: "Special offer has been updated successfully" });
     } else {
       if (data.id) {
         console.debug('[ManageUserApp] adding offer with server id', { id: data.id });
@@ -195,7 +194,6 @@ export default function ManageUserApp() {
           isActive: data.isActive,
         });
       }
-      toast({ title: "Offer created", description: "New special offer has been added" });
     }
   };
 
