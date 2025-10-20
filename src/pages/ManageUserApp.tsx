@@ -56,6 +56,7 @@ export default function ManageUserApp() {
   const updateOffer = useAdminStore(s => s.updateOffer);
   const deleteOffer = useAdminStore(s => s.deleteOffer);
   const fetchBanners = useAdminStore(s => s.fetchBanners);
+  const fetchSpecialOffers = useAdminStore(s => s.fetchSpecialOffers);
   
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [offerModalOpen, setOfferModalOpen] = useState(false);
@@ -282,11 +283,29 @@ export default function ManageUserApp() {
     staleTime: 30_000,
   });
 
+  const specialOffersQuery = useQuery({
+    queryKey: ["specialOffers", listParams],
+    queryFn: async () => {
+      console.log('[ManageUserApp] Fetching special offers with params:', { status, q: q || undefined, limit, offset, orderBy: "sort" });
+      const resp = await fetchSpecialOffers({ status, q: q || undefined, limit, offset, orderBy: "sort" });
+      console.log('[ManageUserApp] Special offers response:', resp);
+      return { data: resp.items, total: resp.total, limit: resp.limit, offset: resp.offset };
+    },
+    enabled: activeTab === "offers",
+    staleTime: 30_000,
+  });
+
   const handleHardRefresh = async () => {
     try {
       setRefreshing(true);
-      await queryClient.invalidateQueries({ queryKey: ["heroBanners"] });
-      await listQuery.refetch();
+      console.log('[ManageUserApp] Hard refresh triggered for active tab:', activeTab);
+      if (activeTab === "banners") {
+        await queryClient.invalidateQueries({ queryKey: ["heroBanners"] });
+        await listQuery.refetch();
+      } else if (activeTab === "offers") {
+        await queryClient.invalidateQueries({ queryKey: ["specialOffers"] });
+        await specialOffersQuery.refetch();
+      }
     } finally {
       setRefreshing(false);
     }
@@ -299,13 +318,22 @@ export default function ManageUserApp() {
   }, [listQuery.data]);
 
   useEffect(() => {
+    if (specialOffersQuery.data) {
+      setTotal(specialOffersQuery.data.total ?? 0);
+    }
+  }, [specialOffersQuery.data]);
+
+  useEffect(() => {
     if (listQuery.error) {
       const e: any = listQuery.error as any;
+      setError(e?.message || "Failed to fetch");
+    } else if (specialOffersQuery.error) {
+      const e: any = specialOffersQuery.error as any;
       setError(e?.message || "Failed to fetch");
     } else {
       setError(null);
     }
-  }, [listQuery.error]);
+  }, [listQuery.error, specialOffersQuery.error]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -433,7 +461,10 @@ export default function ManageUserApp() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={(value) => {
+        console.log('[ManageUserApp] Tab changed to:', value);
+        setActiveTab(value);
+      }}>
         <TabsList>
           <TabsTrigger value="banners">Hero Banners</TabsTrigger>
           <TabsTrigger value="offers">Special Offers</TabsTrigger>
@@ -651,7 +682,18 @@ export default function ManageUserApp() {
             </Button>
           </div>
 
-          {specialOffers.length === 0 ? (
+          {specialOffersQuery.isLoading ? (
+            <Card className="p-12">
+              <LoadingSpinner text="Loading special offers..." />
+            </Card>
+          ) : error ? (
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="text-destructive">Failed to load special offers.</div>
+                <Button variant="outline" size="sm" onClick={() => specialOffersQuery.refetch()}>Retry</Button>
+              </div>
+            </Card>
+          ) : specialOffers.length === 0 ? (
             <Card className="p-12">
               <div className="flex flex-col items-center justify-center text-center space-y-4">
                 <ImageIcon className="w-16 h-16 text-muted-foreground/50" />

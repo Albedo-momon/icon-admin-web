@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { env } from '@/env';
 import { http } from '@/api/client';
+import { getSpecialOffers } from '@/services/specialOffersService';
 
 export type Banner = {
   id: string;
@@ -56,6 +57,7 @@ interface AdminStore {
   updateOffer: (id: string, offer: Partial<Offer>) => void;
   deleteOffer: (id: string) => void;
   reorderOffers: (offers: Offer[]) => void;
+  fetchSpecialOffers: (params?: { status?: 'ACTIVE' | 'INACTIVE' | 'ALL'; q?: string; limit?: number; offset?: number; orderBy?: string }) => Promise<{ items: Offer[]; total: number; limit: number; offset: number }>;
   
   // Agent methods
   createAgent: (agent: Omit<Agent, 'id'>) => void;
@@ -261,6 +263,83 @@ export const useAdminStore = create<AdminStore>()(
       
       reorderOffers: (offers) =>
         set({ specialOffers: renormalizeSortOrder(offers) }),
+      
+      fetchSpecialOffers: async (params = { status: 'ACTIVE', limit: 20, offset: 0, orderBy: 'sort' }) => {
+        console.log('[adminStore.fetchSpecialOffers] Called with params:', params);
+        
+        if (env.useMock) {
+          const mock: Offer[] = [
+            {
+              id: '1',
+              title: 'Gaming Laptop RTX 4060',
+              imageUrl: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400',
+              mrp: 85000,
+              sale: 69999,
+              isActive: true,
+              sortOrder: 1,
+              updatedAt: '2025-10-10',
+            },
+            {
+              id: '2',
+              title: 'Wireless Mouse Logitech',
+              imageUrl: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400',
+              mrp: 2500,
+              sale: 1899,
+              isActive: true,
+              sortOrder: 2,
+              updatedAt: '2025-10-08',
+            },
+          ];
+          const normalizedMock = renormalizeSortOrder(mock);
+          const limit = params.limit ?? 20;
+          const offset = params.offset ?? 0;
+          const pageItems = normalizedMock.slice(offset, offset + limit);
+          set({ specialOffers: pageItems });
+          return { items: pageItems, total: normalizedMock.length, limit, offset };
+        }
+        
+        try {
+          console.log('[adminStore.fetchSpecialOffers] Making API call...');
+          const response = await getSpecialOffers({ 
+            status: params.status, 
+            limit: params.limit ?? 20, 
+            offset: params.offset ?? 0 
+          });
+          
+          console.log('[adminStore.fetchSpecialOffers] API response:', response);
+          
+          const normalizeDate = (value: any): string => {
+            const d = new Date(value ?? Date.now());
+            return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
+          };
+
+          const normalized: Offer[] = response.items.map((item: any) => ({
+            id: String(item.id ?? item.offerId ?? item.uuid ?? Date.now()),
+            title: item.productName ?? item.title ?? 'Untitled',
+            imageUrl: item.imageUrl ?? item.image ?? item.pictureUrl ?? '',
+            mrp: Number(item.price ?? item.mrp ?? 0),
+            sale: Number(item.discounted ?? item.sale ?? 0),
+            isActive: typeof item.isActive === 'boolean' ? item.isActive : String(item.status ?? '').toUpperCase() === 'ACTIVE',
+            sortOrder: Number(item.sortOrder ?? item.sort ?? item.order ?? 0),
+            updatedAt: normalizeDate(item.updatedAt ?? item.updated_at ?? item.modifiedAt ?? item.lastUpdated),
+          }));
+
+          const normalizedList = renormalizeSortOrder(normalized);
+          set({ specialOffers: normalizedList });
+          
+          console.log('[adminStore.fetchSpecialOffers] Normalized offers:', normalizedList);
+
+          return { 
+            items: normalizedList, 
+            total: response.total ?? normalizedList.length, 
+            limit: response.limit ?? params.limit ?? 20, 
+            offset: response.offset ?? params.offset ?? 0 
+          };
+        } catch (error) {
+          console.error('[adminStore.fetchSpecialOffers] Error:', error);
+          throw error;
+        }
+      },
       
       // Agent methods
       createAgent: (agent) =>

@@ -111,6 +111,38 @@ export async function updateSpecialOffer(id: string, data: Partial<SpecialOfferD
 }
 
 /**
+ * Gets all special offers with optional filtering
+ */
+export async function getSpecialOffers(params?: { 
+  status?: 'ACTIVE' | 'INACTIVE' | 'ALL'; 
+  activeNow?: boolean; 
+  limit?: number; 
+  offset?: number 
+}): Promise<{ items: SpecialOfferResponse[]; total: number; limit: number; offset: number }> {
+  try {
+    const queryParams: any = {};
+    if (params?.status && params.status !== 'ALL') queryParams.status = params.status;
+    if (params?.activeNow !== undefined) queryParams.activeNow = params.activeNow;
+    if (params?.limit) queryParams.limit = params.limit;
+    if (params?.offset) queryParams.offset = params.offset;
+
+    console.log('[specialOffersService.getSpecialOffers] Making API call with params:', queryParams);
+    const response = await http.get('/admin/special-offers', { params: queryParams });
+    console.log('[specialOffersService.getSpecialOffers] API response:', response.data);
+    
+    return response.data;
+  } catch (error: any) {
+    console.error('Get special offers failed:', error);
+    
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      throw new SpecialOfferError('Session expired. Please log in again.', 'AUTH_ERROR', error);
+    }
+    
+    throw new SpecialOfferError('Failed to get special offers', 'SERVER_ERROR', error);
+  }
+}
+
+/**
  * Gets a special offer by ID
  */
 export async function getSpecialOffer(id: string): Promise<SpecialOfferResponse> {
