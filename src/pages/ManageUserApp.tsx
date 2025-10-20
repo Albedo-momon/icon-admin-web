@@ -49,7 +49,7 @@ export default function ManageUserApp() {
   
   const banners = useAdminStore(s => s.banners);
   const specialOffers = useAdminStore(s => s.specialOffers);
-  const laptopOffers = useAdminStore((s: any) => s.laptopOffers);
+  const laptopOffers = useAdminStore(s => s.laptopOffers);
   const createBanner = useAdminStore(s => s.createBanner);
   const updateBanner = useAdminStore(s => s.updateBanner);
   const createOffer = useAdminStore(s => s.createOffer);
@@ -57,6 +57,10 @@ export default function ManageUserApp() {
   const deleteOffer = useAdminStore(s => s.deleteOffer);
   const fetchBanners = useAdminStore(s => s.fetchBanners);
   const fetchSpecialOffers = useAdminStore(s => s.fetchSpecialOffers);
+  const createLaptopOffer = useAdminStore(s => s.createLaptopOffer);
+  const updateLaptopOffer = useAdminStore(s => s.updateLaptopOffer);
+  const deleteLaptopOffer = useAdminStore(s => s.deleteLaptopOffer);
+  const fetchLaptopOffers = useAdminStore(s => s.fetchLaptopOffers);
   
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [offerModalOpen, setOfferModalOpen] = useState(false);
@@ -227,44 +231,35 @@ export default function ManageUserApp() {
     setLaptopOfferModalOpen(true);
   };
 
-  const handleSaveLaptopOffer = (data: any) => {
-    const s = useAdminStore.getState() as any;
-    if (editingLaptopOffer) {
-      if (typeof s.updateLaptopOffer === 'function') {
-        s.updateLaptopOffer(editingLaptopOffer.id, data);
+  const handleSaveLaptopOffer = async (data: any) => {
+    try {
+      console.log('[ManageUserApp.handleSaveLaptopOffer] Saving laptop offer:', data);
+      
+      if (editingLaptopOffer) {
+        console.log('[ManageUserApp.handleSaveLaptopOffer] Updating existing laptop offer:', editingLaptopOffer.id);
+        await updateLaptopOffer(editingLaptopOffer.id, data);
+        toast({ title: "Laptop offer updated", description: "Laptop offer has been updated successfully" });
       } else {
-          (useAdminStore.setState as any)((state: any) => {
-            const current = Array.isArray(state.laptopOffers) ? state.laptopOffers : [];
-            return {
-              laptopOffers: current.map((o: any) => (
-                o.id === editingLaptopOffer.id
-                  ? { ...o, ...data, updatedAt: new Date().toISOString().split('T')[0] }
-                  : o
-              )),
-            };
-          });
-        }
-      toast({ title: "Laptop offer updated", description: "Laptop offer has been updated successfully" });
-    } else {
-      if (typeof s.createLaptopOffer === 'function') {
-        s.createLaptopOffer(data);
-      } else {
-        (useAdminStore.setState as any)((state: any) => {
-          const current = Array.isArray(state.laptopOffers) ? state.laptopOffers : [];
-          const maxSort = current.length ? Math.max(...current.map((o: any) => o.sortOrder || 0), 0) : 0;
-          const newOffer = {
-            ...data,
-            id: crypto.randomUUID(),
-            sortOrder: maxSort + 1,
-            updatedAt: new Date().toISOString().split('T')[0],
-          };
-          return { laptopOffers: [...current, newOffer] };
-        });
+        console.log('[ManageUserApp.handleSaveLaptopOffer] Creating new laptop offer');
+        await createLaptopOffer(data);
+        toast({ title: "Laptop offer created", description: "New laptop offer has been added" });
       }
-      toast({ title: "Laptop offer created", description: "New laptop offer has been added" });
+      
+      setLaptopOfferModalOpen(false);
+      setEditingLaptopOffer(undefined);
+      
+      // Refresh the laptop offers query
+      await queryClient.invalidateQueries({ queryKey: ["laptopOffers"] });
+      await laptopOffersQuery.refetch();
+    } catch (error) {
+      console.error('[ManageUserApp.handleSaveLaptopOffer] Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save laptop offer';
+      toast({ 
+        title: "Save failed", 
+        description: errorMessage, 
+        variant: "destructive" 
+      });
     }
-    setLaptopOfferModalOpen(false);
-    setEditingLaptopOffer(undefined);
   };
 
   const handleDeleteLaptopOffer = (id: string) => {
@@ -295,6 +290,18 @@ export default function ManageUserApp() {
     staleTime: 30_000,
   });
 
+  const laptopOffersQuery = useQuery({
+    queryKey: ["laptopOffers", listParams],
+    queryFn: async () => {
+      console.log('[ManageUserApp] Fetching laptop offers with params:', { status, q: q || undefined, limit, offset, orderBy: "sort" });
+      const resp = await fetchLaptopOffers({ status, q: q || undefined, limit, offset, orderBy: "sort" });
+      console.log('[ManageUserApp] Laptop offers response:', resp);
+      return { data: resp.items, total: resp.total, limit: resp.limit, offset: resp.offset };
+    },
+    enabled: activeTab === "laptops",
+    staleTime: 30_000,
+  });
+
   const handleHardRefresh = async () => {
     try {
       setRefreshing(true);
@@ -305,6 +312,9 @@ export default function ManageUserApp() {
       } else if (activeTab === "offers") {
         await queryClient.invalidateQueries({ queryKey: ["specialOffers"] });
         await specialOffersQuery.refetch();
+      } else if (activeTab === "laptops") {
+        await queryClient.invalidateQueries({ queryKey: ["laptopOffers"] });
+        await laptopOffersQuery.refetch();
       }
     } finally {
       setRefreshing(false);
@@ -324,16 +334,25 @@ export default function ManageUserApp() {
   }, [specialOffersQuery.data]);
 
   useEffect(() => {
+    if (laptopOffersQuery.data) {
+      setTotal(laptopOffersQuery.data.total ?? 0);
+    }
+  }, [laptopOffersQuery.data]);
+
+  useEffect(() => {
     if (listQuery.error) {
       const e: any = listQuery.error as any;
       setError(e?.message || "Failed to fetch");
     } else if (specialOffersQuery.error) {
       const e: any = specialOffersQuery.error as any;
       setError(e?.message || "Failed to fetch");
+    } else if (laptopOffersQuery.error) {
+      const e: any = laptopOffersQuery.error as any;
+      setError(e?.message || "Failed to fetch");
     } else {
       setError(null);
     }
-  }, [listQuery.error, specialOffersQuery.error]);
+  }, [listQuery.error, specialOffersQuery.error, laptopOffersQuery.error]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -358,17 +377,15 @@ export default function ManageUserApp() {
         return;
       }
       if (deleteTarget.type === "laptop") {
-        const s = useAdminStore.getState() as any;
-        if (typeof s.deleteLaptopOffer === 'function') {
-          await s.deleteLaptopOffer(deleteTarget.id);
-        } else {
-          (useAdminStore.setState as any)((state: any) => ({
-            laptopOffers: (Array.isArray(state.laptopOffers) ? state.laptopOffers : []).filter((o: LaptopOffer) => o.id !== deleteTarget.id)
-          }));
-        }
+        console.log('[ManageUserApp.confirmDelete] Deleting laptop offer:', deleteTarget.id);
+        setDeletingId(deleteTarget.id);
+        await deleteLaptopOffer(deleteTarget.id);
         toast({ title: "Laptop offer deleted", description: "Laptop offer has been removed" });
         setDeleteDialogOpen(false);
         setDeleteTarget(null);
+        // Refresh the laptop offers query
+        await queryClient.invalidateQueries({ queryKey: ["laptopOffers"] });
+        await laptopOffersQuery.refetch();
         return;
       }
       setDeletingId(deleteTarget.id);
@@ -775,7 +792,18 @@ export default function ManageUserApp() {
             </Button>
           </div>
 
-          {(laptopOffers || []).length === 0 ? (
+          {laptopOffersQuery.isLoading ? (
+            <Card className="p-12">
+              <LoadingSpinner text="Loading laptop offers..." />
+            </Card>
+          ) : error ? (
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="text-destructive">Failed to load laptop offers.</div>
+                <Button variant="outline" size="sm" onClick={() => laptopOffersQuery.refetch()}>Retry</Button>
+              </div>
+            </Card>
+          ) : laptopOffers.length === 0 ? (
             <Card className="p-12">
               <div className="flex flex-col items-center justify-center text-center space-y-4">
                 <ImageIcon className="w-16 h-16 text-muted-foreground/50" />
@@ -797,28 +825,36 @@ export default function ManageUserApp() {
                   <Card className="overflow-hidden">
                     <div className="aspect-video relative">
                       <img
-                        src={laptopOffer.imageUrl}
-                        alt={laptopOffer.title}
+                        src={laptopOffer.imageUrl || 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400'}
+                        alt={laptopOffer.model}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400';
+                        }}
                       />
                       <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
-                        {calculateDiscount(laptopOffer.mrp, laptopOffer.sale)}% OFF
+                        {laptopOffer.discountPercent}% OFF
                       </Badge>
                     </div>
                     <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-lg line-clamp-2">{laptopOffer.title}</h3>
+                      <h3 className="font-semibold text-lg line-clamp-2">{laptopOffer.model}</h3>
                       <div className="text-sm text-muted-foreground space-y-1">
-                        <div><strong>Brand:</strong> {laptopOffer.brand}</div>
-                        <div><strong>Processor:</strong> {laptopOffer.processor}</div>
-                        <div><strong>RAM:</strong> {laptopOffer.ram}</div>
-                        <div><strong>Storage:</strong> {laptopOffer.storage}</div>
+                        {laptopOffer.specs && (
+                          <>
+                            {laptopOffer.specs.cpu && <div><strong>CPU:</strong> {laptopOffer.specs.cpu}</div>}
+                            {laptopOffer.specs.ram && <div><strong>RAM:</strong> {laptopOffer.specs.ram}</div>}
+                            {laptopOffer.specs.storage && <div><strong>Storage:</strong> {laptopOffer.specs.storage}</div>}
+                            {laptopOffer.specs.display && <div><strong>Display:</strong> {laptopOffer.specs.display}</div>}
+                          </>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground line-through">
-                          ₹{laptopOffer.mrp.toLocaleString()}
+                          ₹{laptopOffer.price.toLocaleString()}
                         </span>
                         <span className="text-xl font-bold text-primary">
-                          ₹{laptopOffer.sale.toLocaleString()}
+                          ₹{laptopOffer.discounted.toLocaleString()}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 pt-2">
