@@ -735,7 +735,7 @@ export default function ManageUserApp() {
               </div>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {specialOffers.map((offer, index) => (
                 <motion.div
                   key={offer.id}
@@ -743,32 +743,41 @@ export default function ManageUserApp() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="overflow-hidden">
-                    <div className="aspect-video relative">
+                  <Card className={`overflow-hidden ${!offer.isActive ? 'opacity-60' : ''}`}>
+                    <div className="aspect-square relative">
                       <img
                         src={offer.imageUrl}
                         alt={offer.title}
                         className="w-full h-full object-cover"
                       />
-                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
+                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs">
                         {calculateDiscount(offer.mrp, offer.sale)}% OFF
                       </Badge>
+                      <Badge 
+                        className={`absolute top-2 left-2 text-xs ${
+                          offer.isActive 
+                            ? 'bg-green-500 text-white' 
+                            : 'bg-gray-500 text-white'
+                        }`}
+                      >
+                        {offer.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
                     </div>
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-lg line-clamp-2">{offer.title}</h3>
+                    <div className="p-3 space-y-2">
+                      <h3 className="font-semibold text-sm line-clamp-2">{offer.title}</h3>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground line-through">
+                        <span className="text-xs text-muted-foreground line-through">
                           ₹{offer.mrp.toLocaleString()}
                         </span>
-                        <span className="text-xl font-bold text-primary">
+                        <span className="text-sm font-bold text-primary">
                           ₹{offer.sale.toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 pt-2">
+                      <div className="flex items-center gap-1 pt-1">
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="flex-1"
+                          className="flex-1 text-xs px-2 py-1 h-7"
                           onClick={() => handleEditOffer(offer)}
                         >
                           <Pencil className="w-3 h-3 mr-1" />
@@ -777,10 +786,11 @@ export default function ManageUserApp() {
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          className="px-2 py-1 h-7"
                           onClick={() => handleDeleteOffer(offer.id)}
                           aria-label={`Delete offer ${offer.title}`}
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                          <Trash2 className="w-3 h-3 text-destructive" />
                           <span className="sr-only">Delete</span>
                         </Button>
                       </div>
@@ -823,7 +833,7 @@ export default function ManageUserApp() {
               </div>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {(laptopOffers || []).map((laptopOffer: LaptopOffer, index: number) => (
                 <motion.div
                   key={laptopOffer.id}
@@ -831,8 +841,8 @@ export default function ManageUserApp() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="overflow-hidden">
-                    <div className="aspect-video relative">
+                  <Card className={`overflow-hidden ${laptopOffer.status === 'INACTIVE' ? 'opacity-60' : ''}`}>
+                    <div className="aspect-square relative">
                       <img
                         src={laptopOffer.imageUrl || 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400'}
                         alt={laptopOffer.model}
@@ -842,13 +852,22 @@ export default function ManageUserApp() {
                           target.src = 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400';
                         }}
                       />
-                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
+                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs">
                         {laptopOffer.discountPercent}% OFF
                       </Badge>
+                      <Badge 
+                        className={`absolute top-2 left-2 text-xs ${
+                          laptopOffer.status === 'ACTIVE' 
+                            ? 'bg-green-500 text-white' 
+                            : 'bg-gray-500 text-white'
+                        }`}
+                      >
+                        {laptopOffer.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                      </Badge>
                     </div>
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-lg line-clamp-2">{laptopOffer.model}</h3>
-                      <div className="text-sm text-muted-foreground space-y-1">
+                    <div className="p-3 space-y-2">
+                      <h3 className="font-semibold text-sm line-clamp-2">{laptopOffer.model}</h3>
+                      <div className="text-xs text-muted-foreground space-y-1">
                         {laptopOffer.specs && (
                           <>
                             {laptopOffer.specs.cpu && <div><strong>CPU:</strong> {laptopOffer.specs.cpu}</div>}
@@ -859,18 +878,18 @@ export default function ManageUserApp() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground line-through">
+                        <span className="text-xs text-muted-foreground line-through">
                           ₹{laptopOffer.price.toLocaleString()}
                         </span>
-                        <span className="text-xl font-bold text-primary">
+                        <span className="text-sm font-bold text-primary">
                           ₹{laptopOffer.discounted.toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 pt-2">
+                      <div className="flex items-center gap-1 pt-1">
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="flex-1"
+                          className="flex-1 text-xs px-2 py-1 h-7"
                           onClick={() => handleEditLaptopOffer(laptopOffer)}
                         >
                           <Pencil className="w-3 h-3 mr-1" />
@@ -879,10 +898,11 @@ export default function ManageUserApp() {
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          className="px-2 py-1 h-7"
                           onClick={() => handleDeleteLaptopOffer(laptopOffer.id)}
                           aria-label={`Delete laptop offer ${laptopOffer.model}`}
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                          <Trash2 className="w-3 h-3 text-destructive" />
                           <span className="sr-only">Delete</span>
                         </Button>
                       </div>
