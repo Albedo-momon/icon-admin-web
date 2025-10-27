@@ -114,7 +114,7 @@ export default function AgentsList() {
   const columns: Column<Agent>[] = [
     {
       key: "agent",
-      header: "Agent",
+      header: "AGENT",
       width: "300px",
       render: (_, agent) => (
         <div className="flex items-center gap-3">
@@ -133,12 +133,12 @@ export default function AgentsList() {
     },
     {
       key: "phone",
-      header: "Phone",
+      header: "PHONE",
       render: (_, agent) => agent.phone || "—",
     },
     {
       key: "active",
-      header: "Status",
+      header: "STATUS",
       render: (_, agent) => (
         <Badge 
           variant={agent.active ? "default" : "secondary"}
@@ -154,7 +154,7 @@ export default function AgentsList() {
     },
     {
       key: "operationalStatus",
-      header: "Operational Status",
+      header: "OPERATIONAL STATUS",
       render: (_, agent) => (
         <Badge 
           variant={agent.operationalStatus === "FREE" ? "default" : "secondary"}
@@ -170,7 +170,7 @@ export default function AgentsList() {
     },
     {
       key: "onboardingStatus",
-      header: "Onboarding Status",
+      header: "ONBOARDING STATUS",
       render: (_, agent) => (
         <Badge 
           variant={agent.onboardingStatus === "APPROVED" ? "default" : "secondary"}
@@ -186,13 +186,13 @@ export default function AgentsList() {
     },
     {
       key: "jobsDone",
-      header: "Jobs Done",
+      header: "JOBS DONE",
       sortable: true,
       render: (_, agent) => agent.jobsDone.toLocaleString(),
     },
     {
       key: "ratingAvg",
-      header: "Rating Avg",
+      header: "RATING AVG",
       sortable: true,
       render: (_, agent) => (
         <div className="flex items-center gap-1">
@@ -203,7 +203,7 @@ export default function AgentsList() {
     },
     {
       key: "createdAt",
-      header: "Date Added",
+      header: "DATE ADDED",
       sortable: true,
       render: (_, agent) => {
         const date = new Date(agent.createdAt);

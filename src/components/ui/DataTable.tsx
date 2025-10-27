@@ -191,52 +191,49 @@ export function DataTable<T>({
   return (
     <div className={cn("space-y-4", className)} role="region" aria-label="Data table with sorting and pagination">
       {/* Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {selectable && (
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={isAllSelected}
-                    onCheckedChange={handleSelectAll}
-                    aria-label="Select all rows"
-                  />
-                </TableHead>
-              )}
-              
-              {columns.map((column) => (
-                <TableHead
-                  key={column.key}
-                  style={{ width: column.width }}
-                  className={cn(
-                    column.sortable && "cursor-pointer select-none hover:bg-muted/50",
-                  )}
-                  onClick={column.sortable ? () => handleSort(column.key) : undefined}
-                  aria-sort={
-                    column.sortable && currentSortBy === column.key
-                      ? currentSortDirection === 'asc'
-                        ? 'ascending'
-                        : currentSortDirection === 'desc'
-                        ? 'descending'
-                        : 'none'
-                      : 'none'
-                  }
-                >
-                  <div className="flex items-center gap-2 text-foreground">
-                    {column.header || column.label}
-                    {column.sortable && getSortIcon(column.key)}
-                  </div>
-                </TableHead>
-              ))}
-              
-              {rowActions.length > 0 && (
-                <TableHead className="w-12" aria-label="Actions">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
+      <div className="rounded-lg bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                {selectable && (
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all rows"
+                    />
+                  </TableHead>
+                )}
+                
+                {columns.map((column) => (
+                  <TableHead
+                    key={column.key}
+                    style={{ width: column.width }}
+                    className="text-muted-foreground uppercase tracking-wider text-xs font-medium"
+                  >
+                    {column.sortable ? (
+                      <button
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                        onClick={() => handleSort(column.key)}
+                        aria-label={`Sort by ${column.header || column.label}`}
+                      >
+                        {column.header || column.label}
+                        {getSortIcon(column.key)}
+                      </button>
+                    ) : (
+                      column.header || column.label
+                    )}
+                  </TableHead>
+                ))}
+                
+                {rowActions.length > 0 && (
+                  <TableHead className="w-12" aria-label="Actions">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
           
           <TableBody>
             {loading ? (
@@ -266,6 +263,7 @@ export function DataTable<T>({
                   <TableRow
                     key={rowId}
                     className={cn(
+                      "h-16 hover:bg-muted/50 transition-colors",
                       isSelected && "bg-muted/50",
                       onRowClick && "cursor-pointer hover:bg-muted/50"
                     )}
@@ -282,7 +280,7 @@ export function DataTable<T>({
                     )}
                     
                     {columns.map((column) => (
-                      <TableCell key={column.key}>
+                      <TableCell key={column.key} className="text-text-muted">
                         {renderCell(column, row, index)}
                       </TableCell>
                     ))}
@@ -320,11 +318,12 @@ export function DataTable<T>({
           </TableBody>
         </Table>
       </div>
+    </div>
 
       {/* Pagination */}
       {pagination && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center px-4 mt-2 gap-2 text-sm text-muted-foreground">
             <span>
               Showing {((pagination.page - 1) * pagination.pageSize) + 1} to{" "}
               {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{" "}
@@ -332,7 +331,7 @@ export function DataTable<T>({
             </span>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center py-2 gap-2">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Rows per page:</span>
               <Select
