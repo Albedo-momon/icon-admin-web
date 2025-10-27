@@ -77,6 +77,20 @@ export default {
           body: "hsl(var(--text-body))",
           muted: "hsl(var(--text-muted))",
         },
+        severity: {
+          info: "hsl(var(--primary))",
+          success: "hsl(var(--success))",
+          warning: "hsl(var(--warning))",
+          error: "hsl(var(--destructive))",
+        },
+        status: {
+          active: "hsl(142 71% 45%)",
+          inactive: "hsl(215 16% 47%)",
+          free: "hsl(142 71% 45%)",
+          busy: "hsl(0 84% 60%)",
+          pending: "hsl(38 92% 50%)",
+          approved: "hsl(142 71% 45%)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

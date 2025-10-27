@@ -32,6 +32,7 @@ interface NotificationsState {
   push: (notification: NotificationItem) => void;
   clearAll: () => void;
   setDrawerOpen: (open: boolean) => void;
+  refreshData: () => void; // Add refresh method
   
   // Computed getters
   getUnreadCount: () => number;
@@ -42,6 +43,7 @@ interface NotificationsState {
 const generateDemoNotifications = (): NotificationItem[] => {
   const now = new Date();
   const notifications: NotificationItem[] = [
+    // TODAY - Recent notifications (within last 24 hours)
     {
       id: "n1",
       kind: "NEW_BOOKING",
@@ -76,7 +78,7 @@ const generateDemoNotifications = (): NotificationItem[] => {
       id: "n4",
       kind: "DIAGNOSIS_COMPLETED",
       title: "Diagnosis Complete",
-      subtitle: "Hardware issue identified",
+      subtitle: "Hardware issue identified - GPU replacement needed",
       time: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
       href: "/requests/req-004",
       read: true,
@@ -113,30 +115,153 @@ const generateDemoNotifications = (): NotificationItem[] => {
       severity: "success"
     },
     {
-      id: "n8",
-      kind: "SYSTEM",
-      title: "System Maintenance",
-      subtitle: "Scheduled maintenance completed",
-      time: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+      id: "n11",
+      kind: "REPAIR_STARTED",
+      title: "Repair Started",
+      subtitle: "Laptop screen replacement in progress",
+      time: new Date(now.getTime() - 8 * 60 * 60 * 1000).toISOString(), // 8 hours ago
+      href: "/requests/req-011",
       read: true,
       severity: "info"
     },
     {
-      id: "n9",
+      id: "n12",
+      kind: "NEW_BOOKING",
+      title: "Urgent Service Request",
+      subtitle: "Gaming PC - No Display Issue",
+      time: new Date(now.getTime() - 10 * 60 * 60 * 1000).toISOString(), // 10 hours ago
+      href: "/requests/req-012",
+      read: false,
+      severity: "error"
+    },
+    {
+      id: "n13",
+      kind: "SYSTEM",
+      title: "System Update",
+      subtitle: "Inventory management system updated",
+      time: new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
+      read: true,
+      severity: "info"
+    },
+
+    // YESTERDAY - Notifications from 24-48 hours ago
+    {
+      id: "n14",
+      kind: "AGENT_ACCEPTED",
+      title: "Agent Accepted Request",
+      subtitle: "Sarah Wilson accepted Data Recovery",
+      time: new Date(now.getTime() - 26 * 60 * 60 * 1000).toISOString(), // 26 hours ago
+      href: "/requests/req-014",
+      read: true,
+      severity: "success"
+    },
+    {
+      id: "n15",
+      kind: "DIAGNOSIS_COMPLETED",
+      title: "Diagnosis Complete",
+      subtitle: "Hard drive failure confirmed",
+      time: new Date(now.getTime() - 28 * 60 * 60 * 1000).toISOString(), // 28 hours ago
+      href: "/requests/req-015",
+      read: false,
+      severity: "warning"
+    },
+    {
+      id: "n16",
+      kind: "PC_BUILD_PHASE_CHANGE",
+      title: "Build Phase Updated",
+      subtitle: "Testing → Quality Check",
+      time: new Date(now.getTime() - 30 * 60 * 60 * 1000).toISOString(), // 30 hours ago
+      href: "/requests/req-016",
+      read: true,
+      severity: "info"
+    },
+    {
+      id: "n17",
+      kind: "ETA_CONFIRMED",
+      title: "ETA Updated",
+      subtitle: "Delivery scheduled for tomorrow 10 AM",
+      time: new Date(now.getTime() - 32 * 60 * 60 * 1000).toISOString(), // 32 hours ago
+      href: "/requests/req-017",
+      read: true,
+      severity: "info"
+    },
+    {
+      id: "n18",
+      kind: "NEW_BOOKING",
+      title: "New Service Request",
+      subtitle: "Office PC Setup - 5 Computers",
+      time: new Date(now.getTime() - 35 * 60 * 60 * 1000).toISOString(), // 35 hours ago
+      href: "/requests/req-018",
+      read: false,
+      severity: "info"
+    },
+    {
+      id: "n19",
       kind: "REPAIR_STARTED",
       title: "Repair In Progress",
       subtitle: "Motherboard replacement started",
-      time: new Date(now.getTime() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours ago
-      href: "/requests/req-009",
+      time: new Date(now.getTime() - 38 * 60 * 60 * 1000).toISOString(), // 38 hours ago
+      href: "/requests/req-019",
       read: true,
       severity: "info"
+    },
+    {
+      id: "n8",
+      kind: "SYSTEM",
+      title: "System Maintenance",
+      subtitle: "Scheduled maintenance completed",
+      time: new Date(now.getTime() - 40 * 60 * 60 * 1000).toISOString(), // 40 hours ago
+      read: true,
+      severity: "info"
+    },
+
+    // OLDER - Notifications older than 48 hours
+    {
+      id: "n20",
+      kind: "AGENT_CREATED",
+      title: "New Agent Registered",
+      subtitle: "David Park joined the team",
+      time: new Date(now.getTime() - 50 * 60 * 60 * 1000).toISOString(), // 50 hours ago
+      href: "/agents/agent-020",
+      read: true,
+      severity: "success"
+    },
+    {
+      id: "n21",
+      kind: "CANCELLED",
+      title: "Request Cancelled",
+      subtitle: "Customer cancelled PC build order",
+      time: new Date(now.getTime() - 55 * 60 * 60 * 1000).toISOString(), // 55 hours ago
+      href: "/requests/req-021",
+      read: true,
+      severity: "warning"
     },
     {
       id: "n10",
       kind: "SYSTEM",
       title: "Backup Complete",
       subtitle: "Daily system backup finished",
-      time: new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString(), // 2 days ago
+      time: new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString(), // 3 days ago
+      read: true,
+      severity: "success"
+    },
+    {
+      id: "n22",
+      kind: "DIAGNOSIS_COMPLETED",
+      title: "Diagnosis Complete",
+      subtitle: "Software corruption detected",
+      time: new Date(now.getTime() - 96 * 60 * 60 * 1000).toISOString(), // 4 days ago
+      href: "/requests/req-022",
+      read: true,
+      severity: "error"
+    },
+    {
+      id: "n23",
+      kind: "PC_BUILD_PHASE_CHANGE",
+      title: "Build Complete",
+      subtitle: "Custom gaming rig ready for pickup",
+      time: new Date(now.getTime() - 120 * 60 * 60 * 1000).toISOString(), // 5 days ago
+      href: "/requests/req-023",
       read: true,
       severity: "success"
     }
@@ -191,6 +316,10 @@ export const useNotificationsStore = create<NotificationsState>()(
       
       setDrawerOpen: (open: boolean) => {
         set({ isDrawerOpen: open });
+      },
+      
+      refreshData: () => {
+        set({ items: generateDemoNotifications() });
       },
       
       getUnreadCount: () => {

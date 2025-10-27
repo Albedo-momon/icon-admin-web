@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
-import { MoreHorizontal, ExternalLink } from "lucide-react";
+import { MoreVertical, FileText, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,24 +10,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Chip } from "@/components/ui/chip";
 import type { NotificationItem as NotificationItemType, NotificationKind } from "@/stores/notificationsStore";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
 // Icon mapping for notification kinds
-const getNotificationIcon = (kind: NotificationKind): string => {
-  const icons: Record<NotificationKind, string> = {
-    NEW_BOOKING: "📋",
-    AGENT_ACCEPTED: "✅", 
-    ETA_CONFIRMED: "⏰",
-    DIAGNOSIS_COMPLETED: "🔍",
-    REPAIR_STARTED: "🔧",
-    PC_BUILD_PHASE_CHANGE: "🖥️",
-    CANCELLED: "❌",
-    AGENT_CREATED: "👤",
-    SYSTEM: "⚙️"
-  };
-  return icons[kind] || "📢";
+const iconMap = {
+  NEW_BOOKING: FileText,
+  AGENT_ACCEPTED: CheckCircle,
+  ETA_CONFIRMED: Clock,
+  DIAGNOSIS_COMPLETED: CheckCircle,
+  REPAIR_STARTED: CheckCircle,
+  PC_BUILD_PHASE_CHANGE: FileText,
+  CANCELLED: FileText,
+  AGENT_CREATED: CheckCircle,
+  SYSTEM: Clock,
+};
+
+const getNotificationIcon = (kind: NotificationKind) => {
+  return iconMap[kind] || FileText;
 };
 
 // Severity color mapping
@@ -82,6 +84,7 @@ export function NotificationItem({
   variant = "drawer"
 }: NotificationItemProps) {
   const navigate = useNavigate();
+  const Icon = getNotificationIcon(item.kind);
 
   const handleClick = () => {
     if (!item.read && onMarkRead) {
@@ -109,112 +112,103 @@ export function NotificationItem({
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: variant === "page" ? -1 : 0 }}
       className={cn(
-        "flex items-start gap-3 p-4 rounded-lg border transition-all cursor-pointer",
-        item.read 
-          ? "bg-background border-border" 
-          : "bg-muted/30 border-border shadow-sm",
-        variant === "drawer" && "hover:bg-muted/50",
-        variant === "page" && "hover:shadow-sm"
+        "bg-card border border-card-border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/30 cursor-pointer",
+        !item.read && "border-primary/50 bg-primary/5"
       )}
       onClick={handleClick}
     >
-      {showCheckbox && (
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={handleCheckboxChange}
-          onClick={(e) => e.stopPropagation()}
-          className="mt-1"
-        />
-      )}
-      
-      <div className={cn(
-        "flex-shrink-0 mt-0.5",
-        variant === "drawer" ? "text-lg" : "text-2xl"
-      )}>
-        {getNotificationIcon(item.kind)}
-      </div>
-      
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h4 className={cn(
-            "font-medium truncate",
-            variant === "drawer" ? "text-sm" : "text-base",
-            item.read ? "text-muted-foreground" : "text-foreground"
+      <div className="flex items-start gap-4">
+        {showCheckbox && (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={handleCheckboxChange}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1"
+          />
+        )}
+
+        {/* Left: Icon */}
+        <div className="flex-shrink-0 mt-0.5">
+          <div className={cn(
+            "h-10 w-10 rounded-full flex items-center justify-center",
+            item.severity === "error" && "bg-destructive/10",
+            item.severity === "warning" && "bg-warning/10", 
+            item.severity === "success" && "bg-success/10",
+            (!item.severity || item.severity === "info") && "bg-primary/10"
           )}>
-            {item.title}
-          </h4>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(item.time), { addSuffix: true })}
-            </span>
-            {variant === "drawer" && item.href && (
-              <ExternalLink className="h-3 w-3 text-muted-foreground" />
+            <Icon className={cn(
+              "h-5 w-5",
+              item.severity === "error" && "text-destructive",
+              item.severity === "warning" && "text-warning",
+              item.severity === "success" && "text-success", 
+              (!item.severity || item.severity === "info") && "text-primary"
+            )} />
+          </div>
+        </div>
+
+        {/* Center: Content */}
+        <div className="flex-1 min-w-0 space-y-2">
+          <div>
+            <h3 className="text-sm font-medium text-foreground mb-1">
+              {item.title}
+            </h3>
+            {item.subtitle && (
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {item.subtitle}
+              </p>
             )}
-            {!item.read && (
-              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+          </div>
+          <div className="flex items-center gap-2">
+            {item.severity && (
+              <Chip variant={item.severity as any}>{item.severity}</Chip>
             )}
           </div>
         </div>
-        
-        {item.subtitle && (
-          <p className={cn(
-            "text-muted-foreground mb-2 line-clamp-2",
-            variant === "drawer" ? "text-xs" : "text-sm"
-          )}>
-            {item.subtitle}
-          </p>
-        )}
-        
-        <div className="flex items-center justify-between">
-          {item.severity && (
-            <Badge 
-              variant="outline" 
-              className={cn("text-xs", getSeverityColor(item.severity))}
-            >
-              {item.severity}
-            </Badge>
+
+        {/* Right: Time + Actions */}
+        <div className="flex items-start gap-2 flex-shrink-0">
+          {!item.read && (
+            <div className="h-2 w-2 rounded-full bg-primary mt-1.5" />
           )}
-          
-          {variant === "page" && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="sm">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onToggleRead?.(item.id)}>
-                  {item.read ? "Mark unread" : "Mark read"}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onRemove?.(item.id)}>
-                  Remove
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {formatDistanceToNow(new Date(item.time), { addSuffix: true })}
+          </span>
+          {variant === "drawer" && item.href && (
+            <ExternalLink className="h-3 w-3 text-muted-foreground" />
           )}
-        </div>
-        
-        {variant === "drawer" && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => e.stopPropagation()}
               >
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onToggleRead?.(item.id)}>
-                {item.read ? "Mark unread" : "Mark read"}
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleRead?.(item.id);
+                }}
+              >
+                {item.read ? "Mark as unread" : "Mark as read"}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onRemove?.(item.id)}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove?.(item.id);
+                }}
+                className="text-destructive"
+              >
                 Remove
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
+        </div>
       </div>
     </motion.div>
   );
