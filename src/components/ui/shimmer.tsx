@@ -8,7 +8,8 @@ export function Shimmer({ className }: ShimmerProps) {
   return (
     <div
       className={cn(
-        'animate-pulse rounded-md bg-muted',
+        'animate-pulse rounded-md bg-gradient-to-r from-muted via-muted/50 to-muted',
+        'shadow-sm border border-border/20',
         className
       )}
     />
@@ -41,7 +42,7 @@ export function ShimmerSkeleton({ className }: ShimmerSkeletonProps) {
       {/* Content area shimmer */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="border rounded-lg p-4 space-y-3">
+          <div key={i} className="bg-card/50 backdrop-blur-sm rounded-xl p-4 space-y-3 shadow-lg border border-border/10">
             <Shimmer className="h-6 w-3/4" />
             <Shimmer className="h-4 w-full" />
             <Shimmer className="h-4 w-5/6" />
@@ -54,11 +55,11 @@ export function ShimmerSkeleton({ className }: ShimmerSkeletonProps) {
       </div>
 
       {/* Table shimmer */}
-      <div className="border rounded-lg">
-        <div className="p-4 border-b">
+      <div className="bg-card/50 backdrop-blur-sm rounded-xl shadow-lg border border-border/10">
+        <div className="p-4 border-b border-border/10">
           <Shimmer className="h-6 w-32" />
         </div>
-        <div className="divide-y">
+        <div className="divide-y divide-border/10">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="p-4 flex items-center space-x-4">
               <Shimmer className="h-10 w-10 rounded-full" />
@@ -83,7 +84,7 @@ export function AuthLoadingShimmer({ className }: AuthLoadingShimmerProps) {
   return (
     <div className={cn('min-h-screen bg-background', className)}>
       {/* Top bar shimmer */}
-      <div className="border-b bg-card">
+      <div className="bg-card/80 backdrop-blur-sm border-b border-border/20 shadow-sm">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
             <Shimmer className="h-8 w-32" />
@@ -97,10 +98,10 @@ export function AuthLoadingShimmer({ className }: AuthLoadingShimmerProps) {
 
       <div className="flex">
         {/* Sidebar shimmer */}
-        <div className="w-64 border-r bg-card/50 min-h-screen">
+        <div className="w-64 bg-card/60 backdrop-blur-sm border-r border-border/20 min-h-screen shadow-sm">
           <div className="p-4 space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex items-center space-x-3 p-2">
+              <div key={i} className="flex items-center space-x-3 p-2 rounded-lg bg-card/30">
                 <Shimmer className="h-5 w-5" />
                 <Shimmer className="h-4 w-24" />
               </div>
@@ -118,7 +119,7 @@ export function AuthLoadingShimmer({ className }: AuthLoadingShimmerProps) {
           {/* Stats cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="border rounded-lg p-4 space-y-2">
+              <div key={i} className="bg-card/50 backdrop-blur-sm rounded-xl p-4 space-y-2 shadow-lg border border-border/10">
                 <Shimmer className="h-4 w-20" />
                 <Shimmer className="h-8 w-16" />
                 <Shimmer className="h-3 w-24" />
@@ -127,17 +128,17 @@ export function AuthLoadingShimmer({ className }: AuthLoadingShimmerProps) {
           </div>
 
           {/* Chart area */}
-          <div className="border rounded-lg p-6 mb-6">
+          <div className="bg-card/50 backdrop-blur-sm rounded-xl p-6 mb-6 shadow-lg border border-border/10">
             <Shimmer className="h-6 w-32 mb-4" />
             <Shimmer className="h-64 w-full" />
           </div>
 
           {/* Table */}
-          <div className="border rounded-lg">
-            <div className="p-4 border-b">
+          <div className="bg-card/50 backdrop-blur-sm rounded-xl shadow-lg border border-border/10">
+            <div className="p-4 border-b border-border/10">
               <Shimmer className="h-6 w-40" />
             </div>
-            <div className="divide-y">
+            <div className="divide-y divide-border/10">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="p-4 grid grid-cols-5 gap-4 items-center">
                   <Shimmer className="h-4 w-full" />
@@ -165,7 +166,7 @@ export function LoginLoadingShimmer({ className }: LoginLoadingShimmerProps) {
       <div className="w-full max-w-md">
         {/* Brand header shimmer */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-card mb-4 shadow-lg">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-card/80 backdrop-blur-sm mb-4 shadow-lg border border-border/20">
             <Shimmer className="w-8 h-8 rounded-md" />
           </div>
           <div className="space-y-2">
@@ -175,7 +176,7 @@ export function LoginLoadingShimmer({ className }: LoginLoadingShimmerProps) {
         </div>
 
         {/* Card shimmer mimicking login form */}
-        <div className="border rounded-2xl bg-card p-6 shadow-sm">
+        <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border/20">
           <div className="space-y-4">
             <div className="space-y-2">
               <Shimmer className="h-5 w-24" />
