@@ -61,10 +61,10 @@ export function AdminSidebar({ isOpen = false, onClose }: AdminSidebarProps) {
       {/* Sidebar */}
       <aside className={cn(
         "w-64 bg-sidebar text-sidebar-foreground flex flex-col h-screen border-r border-gray-400 dark:border-gray-600 transition-transform duration-300 ease-in-out z-50",
-        // Desktop: sticky positioning
-        "md:sticky md:top-0 md:translate-x-0",
+        // Desktop: fixed positioning to prevent scrolling with content
+        "md:fixed md:top-0 md:left-0 md:translate-x-0",
         // Mobile: fixed positioning with transform
-        "fixed top-0 left-0 md:relative",
+        "fixed top-0 left-0",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         {/* Mobile close button */}

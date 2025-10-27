@@ -93,12 +93,12 @@ export default function Dashboard() {
       {/* KPI Cards Grid - Responsive 12-column grid */}
       <div className="grid grid-cols-12 gap-4">
         {/* KPI Cards Section */}
-        <div className="col-span-12 xl:col-span-9 lg:col-span-8">
+        <div className="col-span-12 2xl:col-span-9 xl:col-span-8 lg:col-span-12">
           <div className="grid grid-cols-12 gap-4">
             {kpiData.map((kpi, index) => (
               <div 
                 key={kpi.title}
-                className="col-span-12 sm:col-span-6 lg:col-span-4 xl:col-span-4"
+                className="col-span-12 sm:col-span-6 lg:col-span-4 xl:col-span-4 2xl:col-span-4"
               >
                 <KPICard
                   title={kpi.title}
@@ -116,7 +116,7 @@ export default function Dashboard() {
         </div>
         
         {/* Attention Needed Card */}
-        <div className="col-span-12 xl:col-span-3 lg:col-span-4">
+        <div className="col-span-12 2xl:col-span-3 xl:col-span-4 lg:col-span-12">
           <AttentionNeededCard />
         </div>
       </div>
