@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Search, 
-  Filter, 
   ChevronDown, 
   ChevronUp, 
   MoreHorizontal,
@@ -41,11 +40,10 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useRequestsStore, type JobType, type PrimaryStatus, type RequestRow } from "@/stores/requestsStore";
 import ReassignModal from "@/components/requests/ReassignModal";
 import CancelModal from "@/components/requests/CancelModal";
-import { FilterBar } from "@/components/ui/FilterBar";
-import { Chip, StatusChip, ChipGroup } from "@/components/ui/Chips";
-import { DataTable } from "@/components/ui/DataTable";
+import { Chip, ChipGroup } from "@/components/ui/Chips";
 import { cn } from "@/lib/utils";
 import { DateRangePicker } from "../components/ui/DateRangePicker";
+import type { DateRange } from "react-day-picker";
 
 // Type switch component using new Chips
 const TypeSwitch = () => {
@@ -83,7 +81,7 @@ const StatusChips = () => {
   const statuses = [
     { value: "ALL", label: "All", variant: "outline" as const },
     { value: "PENDING", label: "Pending", variant: "warning" as const },
-    { value: "ACCEPTED", label: "Accepted", variant: "pr" as const },
+    { value: "ACCEPTED", label: "Accepted", variant: "secondary" as const },
     { value: "IN_PROGRESS", label: "In Progress", variant: "secondary" as const },
     { value: "COMPLETED", label: "Completed", variant: "success" as const },
     { value: "CANCELLED", label: "Cancelled", variant: "destructive" as const },
@@ -325,15 +323,14 @@ export default function RequestsList() {
     setFilters, 
     isLoading, 
     error, 
-    loadRequests,
-    pagination 
+    loadRequests
   } = useRequestsStore();
   
   const [searchInput, setSearchInput] = useState(filters.search);
   const [selectedRequest, setSelectedRequest] = useState<RequestRow | null>(null);
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
   // Debounced search
   useEffect(() => {
@@ -378,9 +375,9 @@ export default function RequestsList() {
     }
   };
 
-  const handleCancelConfirm = async (reason: string, comment?: string) => {
+  const handleCancelConfirm = async (reason: string) => {
     if (selectedRequest) {
-      await cancelRequest(selectedRequest.id, reason, comment);
+      await cancelRequest(selectedRequest.id, reason);
       setShowCancelModal(false);
       setSelectedRequest(null);
     }

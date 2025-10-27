@@ -92,7 +92,7 @@ export function QuickStats() {
                   maxBarSize={100}
                 >
                   {utilizationData.map((entry, index) => (
-                    <Bar key={`cell-${index}`} fill={entry.color} />
+                    <Bar key={`cell-${index}`} dataKey="value" fill={entry.color} />
                   ))}
                 </Bar>
               </BarChart>

@@ -239,8 +239,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               <PopoverContent className="w-auto p-0" align="end">
                 <CalendarComponent
                   mode="range"
-                  selected={dateRange}
-                  onSelect={(range) => {
+                  selected={dateRange as any}
+                  onSelect={(range: any) => {
                     onDateRangeChange?.(range || {});
                     if (range?.from && range?.to) {
                       setIsDatePickerOpen(false);

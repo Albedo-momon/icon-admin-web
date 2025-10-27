@@ -57,8 +57,8 @@ export interface RequestFilters {
   status: PrimaryStatus | "ALL";
   search: string;
   dateRange?: {
-    from: Date;
-    to: Date;
+    from?: Date;
+    to?: Date;
   };
 }
 
@@ -371,6 +371,11 @@ export const useRequestsStore = create<RequestsState>((set, get) => ({
       allRequests.sort((a, b) => {
         const aValue = a[sort.field];
         const bValue = b[sort.field];
+        
+        // Handle undefined values
+        if (aValue === undefined && bValue === undefined) return 0;
+        if (aValue === undefined) return sort.direction === 'asc' ? 1 : -1;
+        if (bValue === undefined) return sort.direction === 'asc' ? -1 : 1;
         
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           const comparison = aValue.localeCompare(bValue);

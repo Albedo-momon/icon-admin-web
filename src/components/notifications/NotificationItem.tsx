@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { NotificationItem as NotificationItemType, NotificationKind } from "@/stores/notificationsStore";
+import type { NotificationItem as NotificationItemType, NotificationKind } from "@/stores/notificationsStore";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -42,14 +42,14 @@ const getSeverityColor = (severity: string): string => {
 };
 
 const hrefByKind = (n: NotificationItemType) => {
-  const id = encodeURIComponent(n.entityId || "");
+  const id = encodeURIComponent(n.id || "");
   switch (n.kind) {
     case "NEW_BOOKING": return `/requests/${id}?tab=timeline&focus=raised`;
     case "AGENT_ACCEPTED": return `/requests/${id}?tab=timeline&focus=accepted`;
     case "ETA_CONFIRMED": return `/requests/${id}?tab=timeline&focus=eta_confirmed`;
     case "DIAGNOSIS_COMPLETED": return `/requests/${id}?tab=timeline&focus=diagnosis_completed`;
     case "REPAIR_STARTED": return `/requests/${id}?tab=timeline&focus=repair_in_progress`;
-    case "PC_BUILD_PHASE_CHANGE": return `/requests/${id}?tab=timeline&focus=pc_build&phase=${n.meta?.phase||"build"}`;
+    case "PC_BUILD_PHASE_CHANGE": return `/requests/${id}?tab=timeline&focus=pc_build&phase=build`;
     case "CANCELLED": return `/requests/${id}?tab=timeline&focus=cancelled`;
     case "AGENT_CREATED": return `/agents/${id}?tab=profile`;
     default: return `/notifications`;

@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NotificationsDrawer } from "@/components/notifications/NotificationsDrawer";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationsStore } from "@/stores/notificationsStore";
 import { useNavigate } from "react-router-dom";
@@ -71,6 +72,9 @@ export function AdminTopbar() {
               )}
             </Button>
           </NotificationsDrawer>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* Settings Dropdown */}
           <DropdownMenu>

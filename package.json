@@ -60,7 +60,8 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "vaul": "^1.1.2",
+    "uuid": "^13.0.0",
+    "vaul": "^0.9.9",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
@@ -72,6 +73,7 @@
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react-swc": "^4.1.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.36.0",

@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, ImageIcon, Loader2, RefreshCcw } from "lucide-react";
+import { Plus, Pencil, Trash2, ImageIcon, Loader2, RefreshCcw, Eye } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAdminStore } from "@/store/adminStore";
-import type { Banner, Offer } from "@/store/adminStore";
+import { useAdminStore, type Banner, type Offer, type LaptopOffer } from "@/store/adminStore";
 import { toast } from "@/hooks/use-toast";
 import { BannerModal } from "@/components/admin/BannerModal";
 import { OfferModal } from "@/components/admin/OfferModal";
@@ -16,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "@/api/client";
@@ -31,10 +31,12 @@ export default function ManageUserApp() {
   const createOffer = useAdminStore(s => s.createOffer);
   const updateOffer = useAdminStore(s => s.updateOffer);
   const deleteOffer = useAdminStore(s => s.deleteOffer);
+  const fetchBanners = useAdminStore(s => s.fetchBanners);
+  const fetchSpecialOffers = useAdminStore(s => s.fetchSpecialOffers);
   const createLaptopOffer = useAdminStore(s => s.createLaptopOffer);
   const updateLaptopOffer = useAdminStore(s => s.updateLaptopOffer);
   const deleteLaptopOffer = useAdminStore(s => s.deleteLaptopOffer);
-  const fetchBanners = useAdminStore(s => s.fetchBanners);
+  const fetchLaptopOffers = useAdminStore(s => s.fetchLaptopOffers);
   
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [offerModalOpen, setOfferModalOpen] = useState(false);
@@ -46,6 +48,8 @@ export default function ManageUserApp() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'banner' | 'offer' | 'laptop'; id: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
   // Filters & pagination state
   const [searchParams, setSearchParams] = useSearchParams();
@@ -116,6 +120,11 @@ export default function ManageUserApp() {
     setDeleteDialogOpen(true);
   };
 
+  const handlePreviewBanner = (banner: Banner) => {
+    setPreviewImage({ url: banner.imageUrl, title: banner.title });
+    setPreviewModalOpen(true);
+  };
+
   const handleNewOffer = () => {
     setEditingOffer(undefined);
     setOfferModalOpen(true);
@@ -126,13 +135,65 @@ export default function ManageUserApp() {
     setOfferModalOpen(true);
   };
 
-  const handleSaveOffer = (data: { title: string; imageUrl: string; mrp: number; sale: number; isActive: boolean }) => {
+  const handleSaveOffer = (data: { id?: string; title: string; imageUrl: string; mrp: number; sale: number; isActive: boolean }) => {
     if (editingOffer) {
-      updateOffer(editingOffer.id, data);
-      toast({ title: "Offer updated", description: "Special offer has been updated successfully" });
+      if (data.id && data.id !== editingOffer.id) {
+        console.warn('[ManageUserApp] syncing offer id after server update', { oldId: editingOffer.id, newId: data.id });
+        useAdminStore.setState((state) => ({
+          specialOffers: state.specialOffers.map((o) =>
+            o.id === editingOffer.id
+              ? {
+                  ...o,
+                  id: data.id!,
+                  title: data.title,
+                  imageUrl: data.imageUrl,
+                  mrp: data.mrp,
+                  sale: data.sale,
+                  isActive: data.isActive,
+                  updatedAt: new Date().toISOString().split('T')[0],
+                }
+              : o
+          ),
+        }));
+      } else {
+        updateOffer(editingOffer.id, {
+          title: data.title,
+          imageUrl: data.imageUrl,
+          mrp: data.mrp,
+          sale: data.sale,
+          isActive: data.isActive,
+        });
+      }
     } else {
-      createOffer(data);
-      toast({ title: "Offer created", description: "New special offer has been added" });
+      if (data.id) {
+        console.debug('[ManageUserApp] adding offer with server id', { id: data.id });
+        useAdminStore.setState((state) => {
+          const maxSort = Math.max(0, ...state.specialOffers.map((o) => o.sortOrder));
+          return {
+            specialOffers: [
+              ...state.specialOffers,
+              {
+                id: data.id!,
+                title: data.title,
+                imageUrl: data.imageUrl,
+                mrp: data.mrp,
+                sale: data.sale,
+                isActive: data.isActive,
+                sortOrder: maxSort + 1,
+                updatedAt: new Date().toISOString().split('T')[0],
+              },
+            ],
+          };
+        });
+      } else {
+        createOffer({
+          title: data.title,
+          imageUrl: data.imageUrl,
+          mrp: data.mrp,
+          sale: data.sale,
+          isActive: data.isActive,
+        });
+      }
     }
   };
 
@@ -151,44 +212,51 @@ export default function ManageUserApp() {
     setLaptopOfferModalOpen(true);
   };
 
-  const handleSaveLaptopOffer = (data: any) => {
-    const s = useAdminStore.getState();
-    if (editingLaptopOffer) {
-      if (typeof s.updateLaptopOffer === 'function') {
-        s.updateLaptopOffer(editingLaptopOffer.id, data);
+  const handleSaveLaptopOffer = async (data: { 
+    model: string; 
+    imageUrl: string; 
+    price: number; 
+    discounted: number; 
+    status: 'ACTIVE' | 'INACTIVE';
+    specs?: {
+      cpu?: string;
+      ram?: string;
+      storage?: string;
+      display?: string;
+    };
+  }) => {
+    try {
+      console.log('[ManageUserApp.handleSaveLaptopOffer] Saving laptop offer:', data);
+      
+      if (editingLaptopOffer) {
+        console.log('[ManageUserApp.handleSaveLaptopOffer] Updating existing laptop offer:', editingLaptopOffer.id);
+        await updateLaptopOffer(editingLaptopOffer.id, data);
+        toast({ title: "Laptop offer updated", description: "Laptop offer has been updated successfully" });
       } else {
-        useAdminStore.setState((state) => {
-          const current = Array.isArray(state.laptopOffers) ? state.laptopOffers : [];
-          return {
-            laptopOffers: current.map((o) => (
-              o.id === editingLaptopOffer.id
-                ? { ...o, ...data, updatedAt: new Date().toISOString().split('T')[0] }
-                : o
-            )),
-          };
+        console.log('[ManageUserApp.handleSaveLaptopOffer] Creating new laptop offer');
+        await createLaptopOffer({
+          ...data,
+          sort: 0,
+          discountPercent: Math.round(((data.price - data.discounted) / data.price) * 100),
         });
+        toast({ title: "Laptop offer created", description: "New laptop offer has been added" });
       }
-      toast({ title: "Laptop offer updated", description: "Laptop offer has been updated successfully" });
-    } else {
-      if (typeof s.createLaptopOffer === 'function') {
-        s.createLaptopOffer(data);
-      } else {
-        useAdminStore.setState((state) => {
-          const current = Array.isArray(state.laptopOffers) ? state.laptopOffers : [];
-          const maxSort = current.length ? Math.max(...current.map(o => o.sortOrder || 0), 0) : 0;
-          const newOffer = {
-            ...data,
-            id: Date.now().toString(),
-            sortOrder: maxSort + 1,
-            updatedAt: new Date().toISOString().split('T')[0],
-          };
-          return { laptopOffers: [...current, newOffer] };
-        });
-      }
-      toast({ title: "Laptop offer created", description: "New laptop offer has been added" });
+      
+      setLaptopOfferModalOpen(false);
+      setEditingLaptopOffer(undefined);
+      
+      // Refresh the laptop offers query
+      await queryClient.invalidateQueries({ queryKey: ["laptopOffers"] });
+      await laptopOffersQuery.refetch();
+    } catch (error) {
+      console.error('[ManageUserApp.handleSaveLaptopOffer] Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save laptop offer';
+      toast({ 
+        title: "Save failed", 
+        description: errorMessage, 
+        variant: "destructive" 
+      });
     }
-    setLaptopOfferModalOpen(false);
-    setEditingLaptopOffer(undefined);
   };
 
   const handleDeleteLaptopOffer = (id: string) => {
@@ -207,11 +275,44 @@ export default function ManageUserApp() {
     staleTime: 30_000,
   });
 
+  const specialOffersQuery = useQuery({
+    queryKey: ["specialOffers", listParams],
+    queryFn: async () => {
+      console.log('[ManageUserApp] Fetching special offers with params:', { status, q: q || undefined, limit, offset, orderBy: "sort" });
+      const resp = await fetchSpecialOffers({ status, q: q || undefined, limit, offset, orderBy: "sort" });
+      console.log('[ManageUserApp] Special offers response:', resp);
+      return { data: resp.items, total: resp.total, limit: resp.limit, offset: resp.offset };
+    },
+    enabled: activeTab === "offers",
+    staleTime: 30_000,
+  });
+
+  const laptopOffersQuery = useQuery({
+    queryKey: ["laptopOffers", listParams],
+    queryFn: async () => {
+      console.log('[ManageUserApp] Fetching laptop offers with params:', { status, q: q || undefined, limit, offset, orderBy: "sort" });
+      const resp = await fetchLaptopOffers({ status, q: q || undefined, limit, offset, orderBy: "sort" });
+      console.log('[ManageUserApp] Laptop offers response:', resp);
+      return { data: resp.items, total: resp.total, limit: resp.limit, offset: resp.offset };
+    },
+    enabled: activeTab === "laptops",
+    staleTime: 30_000,
+  });
+
   const handleHardRefresh = async () => {
     try {
       setRefreshing(true);
-      await queryClient.invalidateQueries({ queryKey: ["heroBanners"] });
-      await listQuery.refetch();
+      console.log('[ManageUserApp] Hard refresh triggered for active tab:', activeTab);
+      if (activeTab === "banners") {
+        await queryClient.invalidateQueries({ queryKey: ["heroBanners"] });
+        await listQuery.refetch();
+      } else if (activeTab === "offers") {
+        await queryClient.invalidateQueries({ queryKey: ["specialOffers"] });
+        await specialOffersQuery.refetch();
+      } else if (activeTab === "laptops") {
+        await queryClient.invalidateQueries({ queryKey: ["laptopOffers"] });
+        await laptopOffersQuery.refetch();
+      }
     } finally {
       setRefreshing(false);
     }
@@ -224,13 +325,31 @@ export default function ManageUserApp() {
   }, [listQuery.data]);
 
   useEffect(() => {
+    if (specialOffersQuery.data) {
+      setTotal(specialOffersQuery.data.total ?? 0);
+    }
+  }, [specialOffersQuery.data]);
+
+  useEffect(() => {
+    if (laptopOffersQuery.data) {
+      setTotal(laptopOffersQuery.data.total ?? 0);
+    }
+  }, [laptopOffersQuery.data]);
+
+  useEffect(() => {
     if (listQuery.error) {
       const e: any = listQuery.error as any;
+      setError(e?.message || "Failed to fetch");
+    } else if (specialOffersQuery.error) {
+      const e: any = specialOffersQuery.error as any;
+      setError(e?.message || "Failed to fetch");
+    } else if (laptopOffersQuery.error) {
+      const e: any = laptopOffersQuery.error as any;
       setError(e?.message || "Failed to fetch");
     } else {
       setError(null);
     }
-  }, [listQuery.error]);
+  }, [listQuery.error, specialOffersQuery.error, laptopOffersQuery.error]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -243,24 +362,27 @@ export default function ManageUserApp() {
     if (!deleteTarget) return;
     try {
       if (deleteTarget.type === "offer") {
-        deleteOffer(deleteTarget.id);
+        console.log('[ManageUserApp.confirmDelete] Deleting special offer:', deleteTarget.id);
+        setDeletingId(deleteTarget.id);
+        await deleteOffer(deleteTarget.id);
         toast({ title: "Offer deleted", description: "Special offer has been removed" });
         setDeleteDialogOpen(false);
         setDeleteTarget(null);
+        // Refresh the special offers query
+        await queryClient.invalidateQueries({ queryKey: ["specialOffers"] });
+        await specialOffersQuery.refetch();
         return;
       }
       if (deleteTarget.type === "laptop") {
-        const s = useAdminStore.getState();
-        if (typeof s.deleteLaptopOffer === 'function') {
-          await s.deleteLaptopOffer(deleteTarget.id);
-        } else {
-          useAdminStore.setState((state) => ({
-            laptopOffers: (Array.isArray(state.laptopOffers) ? state.laptopOffers : []).filter((o) => o.id !== deleteTarget.id)
-          }));
-        }
+        console.log('[ManageUserApp.confirmDelete] Deleting laptop offer:', deleteTarget.id);
+        setDeletingId(deleteTarget.id);
+        await deleteLaptopOffer(deleteTarget.id);
         toast({ title: "Laptop offer deleted", description: "Laptop offer has been removed" });
         setDeleteDialogOpen(false);
         setDeleteTarget(null);
+        // Refresh the laptop offers query
+        await queryClient.invalidateQueries({ queryKey: ["laptopOffers"] });
+        await laptopOffersQuery.refetch();
         return;
       }
       setDeletingId(deleteTarget.id);
@@ -358,7 +480,10 @@ export default function ManageUserApp() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={(value) => {
+        console.log('[ManageUserApp] Tab changed to:', value);
+        setActiveTab(value);
+      }}>
         <TabsList>
           <TabsTrigger value="banners">Hero Banners</TabsTrigger>
           <TabsTrigger value="offers">Special Offers</TabsTrigger>
@@ -503,6 +628,16 @@ export default function ManageUserApp() {
                             <Button 
                               variant="ghost" 
                               size="icon"
+                              onClick={() => handlePreviewBanner(banner)}
+                              disabled={deletingId === banner.id}
+                              aria-label={`Preview banner ${banner.title}`}
+                            >
+                              <Eye className="w-4 h-4" />
+                              <span className="sr-only">Preview</span>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
                               onClick={() => handleEditBanner(banner)}
                               disabled={deletingId === banner.id}
                               aria-label={`Edit banner ${banner.title}`}
@@ -576,7 +711,18 @@ export default function ManageUserApp() {
             </Button>
           </div>
 
-          {specialOffers.length === 0 ? (
+          {specialOffersQuery.isLoading ? (
+            <Card className="p-12">
+              <LoadingSpinner text="Loading special offers..." />
+            </Card>
+          ) : error ? (
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="text-destructive">Failed to load special offers.</div>
+                <Button variant="outline" size="sm" onClick={() => specialOffersQuery.refetch()}>Retry</Button>
+              </div>
+            </Card>
+          ) : specialOffers.length === 0 ? (
             <Card className="p-12">
               <div className="flex flex-col items-center justify-center text-center space-y-4">
                 <ImageIcon className="w-16 h-16 text-muted-foreground/50" />
@@ -587,7 +733,7 @@ export default function ManageUserApp() {
               </div>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {specialOffers.map((offer, index) => (
                 <motion.div
                   key={offer.id}
@@ -595,32 +741,41 @@ export default function ManageUserApp() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="overflow-hidden">
-                    <div className="aspect-video relative">
+                  <Card className={`overflow-hidden ${!offer.isActive ? 'opacity-60' : ''}`}>
+                    <div className="aspect-square relative">
                       <img
                         src={offer.imageUrl}
                         alt={offer.title}
                         className="w-full h-full object-cover"
                       />
-                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
+                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs">
                         {calculateDiscount(offer.mrp, offer.sale)}% OFF
                       </Badge>
+                      <Badge 
+                        className={`absolute top-2 left-2 text-xs ${
+                          offer.isActive 
+                            ? 'bg-green-500 text-white' 
+                            : 'bg-gray-500 text-white'
+                        }`}
+                      >
+                        {offer.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
                     </div>
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-lg line-clamp-2">{offer.title}</h3>
+                    <div className="p-3 space-y-2">
+                      <h3 className="font-semibold text-sm line-clamp-2">{offer.title}</h3>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground line-through">
+                        <span className="text-xs text-muted-foreground line-through">
                           ₹{offer.mrp.toLocaleString()}
                         </span>
-                        <span className="text-xl font-bold text-primary">
+                        <span className="text-sm font-bold text-primary">
                           ₹{offer.sale.toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 pt-2">
+                      <div className="flex items-center gap-1 pt-1">
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="flex-1"
+                          className="flex-1 text-xs px-2 py-1 h-7"
                           onClick={() => handleEditOffer(offer)}
                         >
                           <Pencil className="w-3 h-3 mr-1" />
@@ -629,10 +784,11 @@ export default function ManageUserApp() {
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          className="px-2 py-1 h-7"
                           onClick={() => handleDeleteOffer(offer.id)}
                           aria-label={`Delete offer ${offer.title}`}
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                          <Trash2 className="w-3 h-3 text-destructive" />
                           <span className="sr-only">Delete</span>
                         </Button>
                       </div>
@@ -653,7 +809,18 @@ export default function ManageUserApp() {
             </Button>
           </div>
 
-          {(laptopOffers || []).length === 0 ? (
+          {laptopOffersQuery.isLoading ? (
+            <Card className="p-12">
+              <LoadingSpinner text="Loading laptop offers..." />
+            </Card>
+          ) : error ? (
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="text-destructive">Failed to load laptop offers.</div>
+                <Button variant="outline" size="sm" onClick={() => laptopOffersQuery.refetch()}>Retry</Button>
+              </div>
+            </Card>
+          ) : laptopOffers.length === 0 ? (
             <Card className="p-12">
               <div className="flex flex-col items-center justify-center text-center space-y-4">
                 <ImageIcon className="w-16 h-16 text-muted-foreground/50" />
@@ -664,46 +831,63 @@ export default function ManageUserApp() {
               </div>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(laptopOffers || []).map((laptopOffer, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {(laptopOffers || []).map((laptopOffer: LaptopOffer, index: number) => (
                 <motion.div
                   key={laptopOffer.id}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="overflow-hidden">
-                    <div className="aspect-video relative">
+                  <Card className={`overflow-hidden ${laptopOffer.status === 'INACTIVE' ? 'opacity-60' : ''}`}>
+                    <div className="aspect-square relative">
                       <img
-                        src={laptopOffer.imageUrl}
-                        alt={laptopOffer.title}
+                        src={laptopOffer.imageUrl || 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400'}
+                        alt={laptopOffer.model}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400';
+                        }}
                       />
-                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
-                        {calculateDiscount(laptopOffer.mrp, laptopOffer.sale)}% OFF
+                      <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs">
+                        {laptopOffer.discountPercent}% OFF
+                      </Badge>
+                      <Badge 
+                        className={`absolute top-2 left-2 text-xs ${
+                          laptopOffer.status === 'ACTIVE' 
+                            ? 'bg-green-500 text-white' 
+                            : 'bg-gray-500 text-white'
+                        }`}
+                      >
+                        {laptopOffer.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
-                    <div className="p-4 space-y-3">
-                      <h3 className="font-semibold text-lg line-clamp-2">{laptopOffer.title}</h3>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <div><strong>Brand:</strong> {laptopOffer.brand}</div>
-                        <div><strong>Processor:</strong> {laptopOffer.processor}</div>
-                        <div><strong>RAM:</strong> {laptopOffer.ram}</div>
-                        <div><strong>Storage:</strong> {laptopOffer.storage}</div>
+                    <div className="p-3 space-y-2">
+                      <h3 className="font-semibold text-sm line-clamp-2">{laptopOffer.model}</h3>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        {laptopOffer.specs && (
+                          <>
+                            {laptopOffer.specs.cpu && <div><strong>CPU:</strong> {laptopOffer.specs.cpu}</div>}
+                            {laptopOffer.specs.ram && <div><strong>RAM:</strong> {laptopOffer.specs.ram}</div>}
+                            {laptopOffer.specs.storage && <div><strong>Storage:</strong> {laptopOffer.specs.storage}</div>}
+                            {laptopOffer.specs.display && <div><strong>Display:</strong> {laptopOffer.specs.display}</div>}
+                          </>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground line-through">
-                          ₹{laptopOffer.mrp.toLocaleString()}
+                        <span className="text-xs text-muted-foreground line-through">
+                          ₹{laptopOffer.price.toLocaleString()}
                         </span>
-                        <span className="text-xl font-bold text-primary">
-                          ₹{laptopOffer.sale.toLocaleString()}
+                        <span className="text-sm font-bold text-primary">
+                          ₹{laptopOffer.discounted.toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 pt-2">
+                      <div className="flex items-center gap-1 pt-1">
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="flex-1"
+                          className="flex-1 text-xs px-2 py-1 h-7"
                           onClick={() => handleEditLaptopOffer(laptopOffer)}
                         >
                           <Pencil className="w-3 h-3 mr-1" />
@@ -712,10 +896,11 @@ export default function ManageUserApp() {
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          className="px-2 py-1 h-7"
                           onClick={() => handleDeleteLaptopOffer(laptopOffer.id)}
-                          aria-label={`Delete laptop offer ${laptopOffer.title}`}
+                          aria-label={`Delete laptop offer ${laptopOffer.model}`}
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                          <Trash2 className="w-3 h-3 text-destructive" />
                           <span className="sr-only">Delete</span>
                         </Button>
                       </div>
@@ -746,7 +931,7 @@ export default function ManageUserApp() {
         open={laptopOfferModalOpen}
         onOpenChange={setLaptopOfferModalOpen}
         onSave={handleSaveLaptopOffer}
-        laptopOffer={editingLaptopOffer}
+        offer={editingLaptopOffer}
       />
 
       <ConfirmDialog
@@ -764,6 +949,29 @@ export default function ManageUserApp() {
         loadingText={deleteTarget?.type === 'banner' ? 'Deleting banner and image...' : deleteTarget?.type === 'laptop' ? 'Deleting laptop offer...' : 'Deleting offer...'}
         onConfirm={confirmDelete}
       />
+
+      {/* Preview Modal */}
+      <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Banner Preview</DialogTitle>
+          </DialogHeader>
+          {previewImage && (
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-full max-h-[70vh] overflow-hidden rounded-lg">
+                <img
+                  src={previewImage.url}
+                  alt={previewImage.title}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="text-center">
+                <h3 className="font-semibold text-lg">{previewImage.title}</h3>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

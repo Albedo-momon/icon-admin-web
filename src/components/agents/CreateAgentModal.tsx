@@ -41,7 +41,6 @@ export function CreateAgentModal({ isOpen, onClose }: CreateAgentModalProps) {
     formState: { errors },
     reset,
     setValue,
-    watch,
   } = useForm<CreateAgentFormData>({
     resolver: zodResolver(createAgentSchema),
     defaultValues: {

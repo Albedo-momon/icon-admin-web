@@ -1,13 +1,11 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Check, Settings, X, Filter } from "lucide-react";
+import { Bell, Check, Settings } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotificationsStore } from "@/stores/notificationsStore";
-import { NotificationKind } from "@/stores/notificationsStore";
-import { useNavigate } from "react-router-dom";
 import { NotificationItem } from "./NotificationItem";
 
 interface NotificationsDrawerProps {
@@ -15,8 +13,7 @@ interface NotificationsDrawerProps {
 }
 
 export function NotificationsDrawer({ children }: NotificationsDrawerProps) {
-  const { items, markRead, markAllRead, toggleRead, remove } = useNotificationsStore();
-  const navigate = useNavigate();
+  const { items, markAllRead, toggleRead, remove } = useNotificationsStore();
 
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [isDrawerOpen, setDrawerOpen] = useState(false);
