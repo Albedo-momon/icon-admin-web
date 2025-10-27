@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AuthLoadingShimmer } from '@/components/ui/shimmer';
 
 interface AuthInitializerProps {
   children: React.ReactNode;
@@ -33,11 +33,7 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
 
   // Show loading until both hydration and auth initialization are complete
   if (!isHydrated || isLoading || !hasInitialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <LoadingSpinner size="lg" text="Loading..." />
-      </div>
-    );
+    return <AuthLoadingShimmer />;
   }
 
   return <>{children}</>;
