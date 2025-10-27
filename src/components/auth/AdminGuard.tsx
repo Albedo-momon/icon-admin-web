@@ -23,7 +23,8 @@ export function AdminGuard({ children }: AdminGuardProps) {
     handleInitialization();
   }, [handleInitialization]);
 
-  // Show loading state while authentication is being checked
+  // Show loading state while authentication is being checked or not initialized yet
+  // This prevents the flash of login page during initial load
   if (isLoading || !hasInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

@@ -64,7 +64,7 @@ export function AttentionNeededCard() {
               <p className="text-sm font-medium">All good</p>
             </div>
           ) : (
-            <ScrollArea className="h-[225px] pr-4">
+            <ScrollArea className="h-[225px] xl:h-[200px] lg:h-[180px] md:h-[200px] pr-4">
               <div className="space-y-3">
                 {attentionItems.map((item) => {
                   const IconComponent = reasonIcons[item.reason];
@@ -76,17 +76,17 @@ export function AttentionNeededCard() {
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <IconComponent className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="font-medium text-sm">
                               {item.bookingId}
                             </span>
                             <Badge 
                               variant="outline" 
-                              className={cn("text-xs px-2 py-0", getTypeColor(item.type))}
+                              className={cn("text-xs px-2 py-0 flex-shrink-0", getTypeColor(item.type))}
                             >
                               {item.type.replace("_", " ")}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
                               {formatAge(item.ageMinutes)}
                             </span>
                           </div>
@@ -98,7 +98,7 @@ export function AttentionNeededCard() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="ml-2 text-xs px-3 py-1 h-7"
+                        className="ml-2 text-xs px-2 py-1 h-7 flex-shrink-0"
                         onClick={() => window.open(item.href, '_blank')}
                       >
                         View

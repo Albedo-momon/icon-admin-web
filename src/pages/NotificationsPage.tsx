@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Search, Bell, Check, X } from "lucide-react";
+import { Search, Bell, Check, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { useNotificationsStore } from "@/stores/notificationsStore";
 import { NotificationItem } from "@/components/notifications/NotificationItem";
 
 const NotificationsPage = () => {
-  const { items, markRead, markAllRead, toggleRead, remove, clearAll } = useNotificationsStore();
+  const { items, markRead, markAllRead, toggleRead, remove, refreshData } = useNotificationsStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -122,140 +122,146 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Bell className="h-6 w-6" />
-          <h1 className="text-2xl font-semibold">Notifications</h1>
-          {unreadCount > 0 && (
-            <Badge variant="secondary" className="ml-2">
-              {unreadCount} unread
-            </Badge>
-          )}
+    <div className="min-h-screen w-full bg-surface-base overflow-x-hidden">
+      <div className="max-w-4xl mx-auto space-y-6 w-full min-w-0">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full min-w-0">
+          <div className="flex items-center gap-3">
+            <Bell className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-semibold text-text-strong">Notifications</h1>
+            {unreadCount > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {unreadCount} unread
+              </Badge>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refreshData}
+              className="bg-surface-card border-border-soft hover:bg-surface-elevated"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={markAllRead}
+              disabled={unreadCount === 0}
+              className="bg-surface-card border-border-soft hover:bg-surface-elevated"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Mark all read
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={markAllRead}
-            disabled={unreadCount === 0}
-          >
-            <Check className="h-4 w-4 mr-2" />
-            Mark all read
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={clearAll}
-            disabled={items.length === 0}
-          >
-            <X className="h-4 w-4 mr-2" />
-            Clear all
-          </Button>
-        </div>
-      </div>
 
-      {/* Search and Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Search */}
+        <div className="relative w-full sm:max-w-md min-w-0">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-muted" />
           <Input
             placeholder="Search notifications..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="w-full pl-10 bg-surface-card border-border-soft"
           />
         </div>
-      </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="unread">Unread</TabsTrigger>
-          <TabsTrigger value="requests">Requests</TabsTrigger>
-          <TabsTrigger value="agents">Agents</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
-        </TabsList>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="w-full flex flex-wrap gap-2 bg-surface-card border border-border-soft">
+            <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-white">All</TabsTrigger>
+            <TabsTrigger value="unread" className="data-[state=active]:bg-primary data-[state=active]:text-white">Unread</TabsTrigger>
+            <TabsTrigger value="requests" className="data-[state=active]:bg-primary data-[state=active]:text-white">Requests</TabsTrigger>
+            <TabsTrigger value="agents" className="data-[state=active]:bg-primary data-[state=active]:text-white">Agents</TabsTrigger>
+            <TabsTrigger value="system" className="data-[state=active]:bg-primary data-[state=active]:text-white">System</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value={activeTab} className="space-y-4">
-          {/* Bulk Actions */}
-          {selectedItems.size > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg"
-            >
-              <span className="text-sm text-muted-foreground">
-                {selectedItems.size} selected
-              </span>
-              <Button size="sm" variant="outline" onClick={handleBulkMarkRead}>
-                Mark read
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleBulkMarkUnread}>
-                Mark unread
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleBulkRemove}>
-                Remove
-              </Button>
-            </motion.div>
-          )}
+          <TabsContent value={activeTab} className="space-y-6">
+            {/* Bulk Actions */}
+            {selectedItems.size > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-wrap items-center gap-2 p-4 bg-surface-card border border-border-soft rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
+              >
+                <span className="text-sm text-text-muted">
+                  {selectedItems.size} selected
+                </span>
+                <Button size="sm" variant="outline" onClick={handleBulkMarkRead}>
+                  Mark read
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleBulkMarkUnread}>
+                  Mark unread
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleBulkRemove}>
+                  Remove
+                </Button>
+              </motion.div>
+            )}
 
-          {/* Select All */}
-          {filteredItems.length > 0 && (
-            <div className="flex items-center gap-2 pb-2 border-b">
-              <Checkbox
-                checked={selectedItems.size === filteredItems.length && filteredItems.length > 0}
-                onCheckedChange={handleSelectAll}
-              />
-              <span className="text-sm text-muted-foreground">
-                Select all ({filteredItems.length})
-              </span>
-            </div>
-          )}
+            {/* Select All */}
+            {filteredItems.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-border-soft">
+                <Checkbox
+                  checked={selectedItems.size === filteredItems.length && filteredItems.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm text-text-muted">
+                  Select all ({filteredItems.length})
+                </span>
+              </div>
+            )}
 
-          {/* Notifications List */}
-          {Object.keys(groupedItems).length === 0 ? (
-            <div className="text-center py-12">
-              <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No notifications</h3>
-              <p className="text-muted-foreground">
-                {searchQuery ? "No notifications match your search." : "You're all caught up!"}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {["Today", "Yesterday", "Older"].map(groupKey => {
-                const groupItems = groupedItems[groupKey];
-                if (!groupItems || groupItems.length === 0) return null;
+            {/* Notifications List */}
+            {Object.keys(groupedItems).length === 0 ? (
+              <div className="text-center py-12">
+                <Bell className="h-12 w-12 mx-auto text-text-muted mb-4" />
+                <h3 className="text-lg font-medium mb-2 text-text-strong">No notifications</h3>
+                <p className="text-text-muted">
+                  {searchQuery ? "No notifications match your search." : "You're all caught up!"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {["Today", "Yesterday", "Older"].map(groupKey => {
+                  const groupItems = groupedItems[groupKey];
+                  if (!groupItems || groupItems.length === 0) return null;
 
-                return (
-                  <div key={groupKey}>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-3 sticky top-0 bg-background/80 backdrop-blur-sm py-2">
-                      {groupKey}
-                    </h3>
-                    <div className="space-y-2">
-                      {groupItems.map((item) => (
-                        <NotificationItem
-                    key={item.id}
-                    item={item}
-                    variant="page"
-                    isSelected={selectedItems.has(item.id)}
-                    showCheckbox={true}
-                    onSelect={handleSelectItem}
-                    onToggleRead={toggleRead}
-                    onRemove={remove}
-                  />
-                      ))}
+                  return (
+                    <div key={groupKey}>
+                      <div className="flex items-center gap-2 mb-4 sticky top-0 bg-background/95 backdrop-blur-sm py-2 border-b border-border/50">
+                        <h3 className="text-sm font-semibold text-foreground">
+                          {groupKey}
+                        </h3>
+                        <Badge variant="secondary" className="text-xs">
+                          {groupItems.length}
+                        </Badge>
+                      </div>
+                      <div className="space-y-3">
+                        {groupItems.map((item) => (
+                          <NotificationItem
+                            key={item.id}
+                            item={item}
+                            variant="page"
+                            isSelected={selectedItems.has(item.id)}
+                            showCheckbox={true}
+                            onSelect={handleSelectItem}
+                            onToggleRead={toggleRead}
+                            onRemove={remove}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

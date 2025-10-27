@@ -186,7 +186,7 @@ export const useAuthStore = create<AuthState>()(
       return {
         user: null,
         isAuthenticated: false,
-        isLoading: true,
+        isLoading: true, // Start with loading true to prevent flash
         hasInitialized: false,
         rememberMe: false,
         userProfile: null,
@@ -518,8 +518,11 @@ export const useAuthStore = create<AuthState>()(
           // Clear localStorage and sessionStorage
           localStorage.removeItem('auth-storage');
           sessionStorage.removeItem('lastRoute');
+          // Set a one-time flag so UI skips shimmer right after logout
+          sessionStorage.setItem('justLoggedOut', 'true');
           
-          set({ user: null, userProfile: null, isAuthenticated: false, rememberMe: false, hasInitialized: true });
+          // Ensure UI does not show loading shimmer after logout
+          set({ user: null, userProfile: null, isAuthenticated: false, rememberMe: false, hasInitialized: true, isLoading: false });
         } catch (error) {
           console.error('Logout error:', error);
         }

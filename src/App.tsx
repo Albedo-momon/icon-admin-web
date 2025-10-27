@@ -6,25 +6,28 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AdminLayout } from "./components/layout/AdminLayout";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import { AdminGuard } from "./components/auth/AdminGuard";
+import { AuthInitializer } from "./components/auth/AuthInitializer";
 import { useAuthStore } from "./stores/authStore";
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { isAdmin } from "./services/authService";
-import Dashboard from "./pages/Dashboard";
-import ManageUserApp from "./pages/ManageUserApp";
-import RequestsList from "./pages/RequestsList";
-import RequestDetail from "./pages/RequestDetail";
-import AgentsList from "./pages/AgentsList";
-import AgentDetail from "./pages/AgentDetail";
-import NotificationsPage from "./pages/NotificationsPage";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import EmailVerification from "./pages/EmailVerification";
-import ForgotPassword from "./pages/ForgotPassword";
-import ForgotPasswordVerify from "./pages/ForgotPasswordVerify";
-import ForgotPasswordReset from "./pages/ForgotPasswordReset";
-import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
-import { useEffect } from "react";
+import { useEffect, Suspense, lazy } from "react";
+
+// Lazy load page components for better performance
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ManageUserApp = lazy(() => import("./pages/ManageUserApp"));
+const RequestsList = lazy(() => import("./pages/RequestsList"));
+const RequestDetail = lazy(() => import("./pages/RequestDetail"));
+const AgentsList = lazy(() => import("./pages/AgentsList"));
+const AgentDetail = lazy(() => import("./pages/AgentDetail"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const EmailVerification = lazy(() => import("./pages/EmailVerification"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ForgotPasswordVerify = lazy(() => import("./pages/ForgotPasswordVerify"));
+const ForgotPasswordReset = lazy(() => import("./pages/ForgotPasswordReset"));
+const Profile = lazy(() => import("./pages/Profile"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 
 const queryClient = new QueryClient({
@@ -48,6 +51,7 @@ const RootRedirect = () => {
   }, [hasInitialized, initializeAuth]);
   
   // Show loading while authentication state is being determined
+  // This prevents the flash of login page during initial authentication check
   if (isLoading || !hasInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -88,6 +92,7 @@ const LoginRedirect = () => {
   }, [hasInitialized, initializeAuth]);
 
   // Show loading screen while authentication is being verified or not initialized yet
+  // This prevents showing the login form before authentication state is determined
   if (isLoading || !hasInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -112,99 +117,107 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginRedirect />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/email-verification" element={<EmailVerification />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/forgot-password/verify" element={<ForgotPasswordVerify />} />
-          <Route path="/forgot-password/reset" element={<ForgotPasswordReset />} />
-          <Route path="/" element={<RootRedirect />} />
-          <Route
-            path="/dashboard"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <Dashboard />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/manage-user-app"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <ManageUserApp />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/requests"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <RequestsList />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/requests/:id"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <RequestDetail />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/agents"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <AgentsList />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/agents/:id"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <AgentDetail />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <NotificationsPage />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <AuthGuard>
-                <AdminLayout>
-                  <Profile />
-                </AdminLayout>
-              </AuthGuard>
-            }
-          />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthInitializer>
+        <BrowserRouter>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+              <LoadingSpinner size="lg" text="Loading..." />
+            </div>
+          }>
+            <Routes>
+              <Route path="/login" element={<LoginRedirect />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/email-verification" element={<EmailVerification />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/forgot-password/verify" element={<ForgotPasswordVerify />} />
+              <Route path="/forgot-password/reset" element={<ForgotPasswordReset />} />
+              <Route path="/" element={<RootRedirect />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <AdminGuard>
+                    <AdminLayout>
+                      <Dashboard />
+                    </AdminLayout>
+                  </AdminGuard>
+                }
+              />
+              <Route
+                path="/manage-user-app"
+                element={
+                  <AdminGuard>
+                    <AdminLayout>
+                      <ManageUserApp />
+                    </AdminLayout>
+                  </AdminGuard>
+                }
+              />
+              <Route
+                path="/requests"
+                element={
+                  <AdminGuard>
+                    <AdminLayout>
+                      <RequestsList />
+                    </AdminLayout>
+                  </AdminGuard>
+                }
+              />
+              <Route
+                path="/requests/:id"
+                element={
+                  <AdminGuard>
+                    <AdminLayout>
+                      <RequestDetail />
+                    </AdminLayout>
+                  </AdminGuard>
+                }
+              />
+              <Route
+                path="/agents"
+                element={
+                  <AdminGuard>
+                    <AdminLayout>
+                      <AgentsList />
+                    </AdminLayout>
+                  </AdminGuard>
+                }
+              />
+              <Route
+                path="/agents/:id"
+                element={
+                  <AdminGuard>
+                    <AdminLayout>
+                      <AgentDetail />
+                    </AdminLayout>
+                  </AdminGuard>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <AdminGuard>
+                    <AdminLayout>
+                      <NotificationsPage />
+                    </AdminLayout>
+                  </AdminGuard>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <AuthGuard>
+                    <AdminLayout>
+                      <Profile />
+                    </AdminLayout>
+                  </AuthGuard>
+                }
+              />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </AuthInitializer>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -44,6 +44,8 @@ export interface Column<T> {
   width?: string;
   render?: (value: any, row: T, index: number) => React.ReactNode;
   accessor?: (row: T) => any;
+  hideOnMobile?: boolean; // New prop to hide columns on mobile
+  mobileLabel?: string; // Custom label for mobile card view
 }
 
 export interface RowAction<T> {
@@ -75,6 +77,8 @@ export interface DataTableProps<T> {
   className?: string;
   getRowId?: (row: T) => string | number;
   onRowClick?: (row: T) => void;
+  responsive?: boolean; // New prop to enable responsive behavior
+  responsiveBreakpoint?: "sm" | "md" | "lg" | "xl"; // breakpoint at which table view appears
 }
 
 export function DataTable<T>({
@@ -93,6 +97,8 @@ export function DataTable<T>({
   className,
   getRowId = (row: T) => (row as any).id || (row as any).key || String(row),
   onRowClick,
+  responsive = false,
+  responsiveBreakpoint = "md",
 }: DataTableProps<T>) {
   const [internalSortBy, setInternalSortBy] = useState<string | null>(null);
   const [internalSortDirection, setInternalSortDirection] = useState<SortDirection>(null);
@@ -188,55 +194,180 @@ export function DataTable<T>({
     return value?.toString() || "";
   };
 
+  // Mobile card view component
+  const MobileCard = ({ row, index }: { row: T; index: number }) => {
+    const rowId = getRowId(row);
+    const isSelected = selectable && selectedRows.some(selectedRow => getRowId(selectedRow) === rowId);
+    
+    // Find primary column (first non-hidden column)
+    const primaryColumn = columns.find(col => !col.hideOnMobile) || columns[0];
+    // Find visible columns for secondary grid
+    const secondaryColumns = columns.filter(col => col.hideOnMobile && col.key !== primaryColumn?.key);
+    
+    return (
+      <div
+        className={cn(
+          "bg-card border rounded-lg p-4 space-y-3 min-h-[44px] cursor-pointer hover:bg-muted/50 transition-colors",
+          isSelected && "bg-muted/50"
+        )}
+        onClick={onRowClick ? () => onRowClick(row) : undefined}
+      >
+        {/* Primary line with avatar/name + status + actions */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {selectable && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => handleSelectRow(row)}
+                aria-label={`Select row ${index + 1}`}
+                className="shrink-0"
+              />
+            )}
+            {primaryColumn && (
+              <div className="flex-1 min-w-0">
+                {renderCell(primaryColumn, row, index)}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Status column if exists */}
+            {columns.find(col => col.key.toLowerCase().includes('status') && !col.hideOnMobile) && (
+              <div>
+                {renderCell(columns.find(col => col.key.toLowerCase().includes('status') && !col.hideOnMobile)!, row, index)}
+              </div>
+            )}
+            
+            {/* Actions */}
+            {rowActions.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {rowActions.map((action, actionIndex) => (
+                    <DropdownMenuItem
+                      key={actionIndex}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        action.onClick(row);
+                      }}
+                      disabled={action.disabled?.(row)}
+                      className={cn(
+                        action.variant === "destructive" && "text-destructive focus:text-destructive"
+                      )}
+                    >
+                      {typeof action.label === "function" ? action.label(row) : action.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
+        
+        {/* Secondary grid for hidden columns */}
+        {secondaryColumns.length > 0 && (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            {secondaryColumns.map((column) => (
+              <div key={column.key} className="space-y-1">
+                <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                  {column.mobileLabel || column.header || column.label}
+                </div>
+                <div className="text-foreground">
+                  {renderCell(column, row, index)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className={cn("space-y-4", className)} role="region" aria-label="Data table with sorting and pagination">
-      {/* Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {selectable && (
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={isAllSelected}
-                    onCheckedChange={handleSelectAll}
-                    aria-label="Select all rows"
-                  />
-                </TableHead>
-              )}
-              
-              {columns.map((column) => (
-                <TableHead
-                  key={column.key}
-                  style={{ width: column.width }}
-                  className={cn(
-                    column.sortable && "cursor-pointer select-none hover:bg-muted/50",
-                  )}
-                  onClick={column.sortable ? () => handleSort(column.key) : undefined}
-                  aria-sort={
-                    column.sortable && currentSortBy === column.key
-                      ? currentSortDirection === 'asc'
-                        ? 'ascending'
-                        : currentSortDirection === 'desc'
-                        ? 'descending'
-                        : 'none'
-                      : 'none'
-                  }
-                >
-                  <div className="flex items-center gap-2 text-foreground">
-                    {column.header || column.label}
-                    {column.sortable && getSortIcon(column.key)}
-                  </div>
-                </TableHead>
-              ))}
-              
-              {rowActions.length > 0 && (
-                <TableHead className="w-12" aria-label="Actions">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
+      {/* Mobile view - stacked cards */}
+      {responsive && (
+        <div className={cn(
+          responsiveBreakpoint === "lg" ? "lg:hidden" : 
+          responsiveBreakpoint === "xl" ? "xl:hidden" : 
+          responsiveBreakpoint === "sm" ? "sm:hidden" : "md:hidden",
+          "space-y-3"
+        )}>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center text-muted-foreground">Loading...</div>
+            </div>
+          ) : sortedData.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center text-muted-foreground">{emptyMessage}</div>
+            </div>
+          ) : (
+            sortedData.map((row, index) => (
+              <MobileCard key={getRowId(row)} row={row} index={index} />
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Desktop table view */}
+      <div className={cn(
+        "rounded-lg bg-card overflow-hidden",
+        responsive && (
+          responsiveBreakpoint === "lg" ? "hidden lg:block" : 
+          responsiveBreakpoint === "xl" ? "hidden xl:block" : 
+          responsiveBreakpoint === "sm" ? "hidden sm:block" : "hidden md:block"
+        )
+      )}>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                {selectable && (
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all rows"
+                    />
+                  </TableHead>
+                )}
+                
+                {columns.map((column) => (
+                  <TableHead
+                    key={column.key}
+                    style={{ width: column.width }}
+                    className={cn(
+                      "text-muted-foreground uppercase tracking-wider text-xs font-medium",
+                      responsive && column.hideOnMobile && "col-date col-rating col-jobs"
+                    )}
+                  >
+                    {column.sortable ? (
+                      <button
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                        onClick={() => handleSort(column.key)}
+                        aria-label={`Sort by ${column.header || column.label}`}
+                      >
+                        {column.header || column.label}
+                        {getSortIcon(column.key)}
+                      </button>
+                    ) : (
+                      column.header || column.label
+                    )}
+                  </TableHead>
+                ))}
+                
+                {rowActions.length > 0 && (
+                  <TableHead className="w-12" aria-label="Actions">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
           
           <TableBody>
             {loading ? (
@@ -266,6 +397,7 @@ export function DataTable<T>({
                   <TableRow
                     key={rowId}
                     className={cn(
+                      "h-16 hover:bg-muted/50 transition-colors",
                       isSelected && "bg-muted/50",
                       onRowClick && "cursor-pointer hover:bg-muted/50"
                     )}
@@ -282,7 +414,13 @@ export function DataTable<T>({
                     )}
                     
                     {columns.map((column) => (
-                      <TableCell key={column.key}>
+                      <TableCell 
+                        key={column.key} 
+                        className={cn(
+                          "text-text-muted",
+                          responsive && column.hideOnMobile && "col-date col-rating col-jobs"
+                        )}
+                      >
                         {renderCell(column, row, index)}
                       </TableCell>
                     ))}
@@ -320,11 +458,12 @@ export function DataTable<T>({
           </TableBody>
         </Table>
       </div>
+    </div>
 
       {/* Pagination */}
       {pagination && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center px-4 gap-2 text-sm text-muted-foreground">
             <span>
               Showing {((pagination.page - 1) * pagination.pageSize) + 1} to{" "}
               {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{" "}
@@ -333,34 +472,8 @@ export function DataTable<T>({
           </div>
           
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Rows per page:</span>
-              <Select
-                value={pagination.pageSize.toString()}
-                onValueChange={(value) => pagination.onPageSizeChange(parseInt(value))}
-              >
-                <SelectTrigger className="w-16">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[10, 20, 50, 100].map((size) => (
-                    <SelectItem key={size} value={size.toString()}>
-                      {size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => pagination.onPageChange(1)}
-                disabled={pagination.page === 1}
-              >
-                <ChevronsLeft className="h-4 w-4" />
-              </Button>
+            {/* Compact pagination for mobile */}
+            <div className="flex items-center gap-1 sm:hidden">
               <Button
                 variant="outline"
                 size="sm"
@@ -368,10 +481,11 @@ export function DataTable<T>({
                 disabled={pagination.page === 1}
               >
                 <ChevronLeft className="h-4 w-4" />
+                Prev
               </Button>
               
               <span className="px-3 py-1 text-sm">
-                Page {pagination.page} of {Math.ceil(pagination.total / pagination.pageSize)}
+                {pagination.page} / {Math.ceil(pagination.total / pagination.pageSize)}
               </span>
               
               <Button
@@ -380,16 +494,71 @@ export function DataTable<T>({
                 onClick={() => pagination.onPageChange(pagination.page + 1)}
                 disabled={pagination.page >= Math.ceil(pagination.total / pagination.pageSize)}
               >
+                Next
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => pagination.onPageChange(Math.ceil(pagination.total / pagination.pageSize))}
-                disabled={pagination.page >= Math.ceil(pagination.total / pagination.pageSize)}
-              >
-                <ChevronsRight className="h-4 w-4" />
-              </Button>
+            </div>
+
+            {/* Full pagination for desktop */}
+            <div className="hidden sm:flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Rows per page:</span>
+                <Select
+                  value={pagination.pageSize.toString()}
+                  onValueChange={(value) => pagination.onPageSizeChange(parseInt(value))}
+                >
+                  <SelectTrigger className="w-16">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[10, 20, 50, 100].map((size) => (
+                      <SelectItem key={size} value={size.toString()}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-1 px-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pagination.onPageChange(1)}
+                  disabled={pagination.page === 1}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pagination.onPageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <span className="px-3 py-1 text-sm">
+                  Page {pagination.page} of {Math.ceil(pagination.total / pagination.pageSize)}
+                </span>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pagination.onPageChange(pagination.page + 1)}
+                  disabled={pagination.page >= Math.ceil(pagination.total / pagination.pageSize)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pagination.onPageChange(Math.ceil(pagination.total / pagination.pageSize))}
+                  disabled={pagination.page >= Math.ceil(pagination.total / pagination.pageSize)}
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

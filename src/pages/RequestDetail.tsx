@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense, lazy } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -27,10 +27,12 @@ import { StatusTimeline } from "@/components/ui/Timeline";
 import { NotesList } from "@/components/ui/NotesList";
 import { FeedbackCard } from "@/components/ui/FeedbackCard";
 import { useRequestsStore, type RequestDetail, type JobType, type PrimaryStatus } from "@/stores/requestsStore";
-import ReassignModal from "@/components/requests/ReassignModal";
-import CancelModal from "@/components/requests/CancelModal";
-import ChangeStatusModal from "@/components/requests/ChangeStatusModal";
 import { cn } from "@/lib/utils";
+
+// Lazy load modal components for better performance
+const ReassignModal = lazy(() => import("@/components/requests/ReassignModal"));
+const CancelModal = lazy(() => import("@/components/requests/CancelModal"));
+const ChangeStatusModal = lazy(() => import("@/components/requests/ChangeStatusModal"));
 
 // Job type badge component
 const JobTypeBadge = ({ type }: { type: JobType }) => {
@@ -219,12 +221,14 @@ export default function RequestDetail() {
       
       {/* Tabs */}
       <Tabs defaultValue={initialTab} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="w-full justify-start md:w-auto md:justify-center">
+            <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
+            <TabsTrigger value="timeline" className="whitespace-nowrap">Timeline</TabsTrigger>
+            <TabsTrigger value="notes" className="whitespace-nowrap">Notes</TabsTrigger>
+            <TabsTrigger value="feedback" className="whitespace-nowrap">Feedback</TabsTrigger>
+          </TabsList>
+        </div>
         
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -457,7 +461,7 @@ export default function RequestDetail() {
       
       {/* Modals */}
       {request && (
-        <>
+        <Suspense fallback={<LoadingSpinner size="sm" />}>
           <ReassignModal
             isOpen={showReassignModal}
             onClose={() => setShowReassignModal(false)}
@@ -478,7 +482,7 @@ export default function RequestDetail() {
             onConfirm={handleChangeStatusConfirm}
             request={request}
           />
-        </>
+        </Suspense>
       )}
     </div>
   );

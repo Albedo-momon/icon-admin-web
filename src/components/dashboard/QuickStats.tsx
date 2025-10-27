@@ -54,12 +54,11 @@ export function QuickStats() {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.4 }}
     >
-      <Card className="w-[800px] p-6">
+      <Card className="w-full max-w-[800px] p-6 ">
         <h3 className="text-xl font-semibold mb-6">Agent Utilization</h3>
-        <div className="flex justify-center">
-          <div className="w-full max-w-lg">
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart
+        <div className="w-full">
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart
                 data={utilizationData}
                 margin={{
                   top: 20,
@@ -68,36 +67,35 @@ export function QuickStats() {
                   bottom: 20,
                 }}
                 barCategoryGap="25%"
+            >
+              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+              <XAxis 
+                dataKey="name" 
+                axisLine={false}
+                tickLine={false}
+                className="text-sm"
+                tick={{ fontSize: 13 }}
+              />
+              <YAxis 
+                axisLine={false}
+                tickLine={false}
+                className="text-sm"
+                tick={{ fontSize: 13 }}
+                width={35}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar 
+                dataKey="value" 
+                fill="#8884d8"
+                radius={[6, 6, 0, 0]}
+                maxBarSize={100}
               >
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false}
-                  tickLine={false}
-                  className="text-sm"
-                  tick={{ fontSize: 13 }}
-                />
-                <YAxis 
-                  axisLine={false}
-                  tickLine={false}
-                  className="text-sm"
-                  tick={{ fontSize: 13 }}
-                  width={35}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar 
-                  dataKey="value" 
-                  fill="#8884d8"
-                  radius={[6, 6, 0, 0]}
-                  maxBarSize={100}
-                >
-                  {utilizationData.map((entry, index) => (
-                    <Bar key={`cell-${index}`} dataKey="value" fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+                {utilizationData.map((entry, index) => (
+                  <Bar key={`cell-${index}`} dataKey="value" fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
         
         {/* Summary Stats */}

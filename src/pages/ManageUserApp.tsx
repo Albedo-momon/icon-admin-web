@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense, lazy } from "react";
 import { motion } from "framer-motion";
 import { Plus, Pencil, Trash2, ImageIcon, Loader2, RefreshCcw, Eye } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -7,18 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAdminStore, type Banner, type Offer, type LaptopOffer } from "@/store/adminStore";
 import { toast } from "@/hooks/use-toast";
-import { BannerModal } from "@/components/admin/BannerModal";
-import { OfferModal } from "@/components/admin/OfferModal";
-import { LaptopOfferModal } from "@/components/admin/LaptopOfferModal";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LazyImage } from "@/components/ui/LazyImage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { http } from "@/api/client";
+
+// Lazy load heavy modal components for better performance
+const BannerModal = lazy(() => import("@/components/admin/BannerModal").then(module => ({ default: module.BannerModal })));
+const OfferModal = lazy(() => import("@/components/admin/OfferModal").then(module => ({ default: module.OfferModal })));
+const LaptopOfferModal = lazy(() => import("@/components/admin/LaptopOfferModal").then(module => ({ default: module.LaptopOfferModal })));
+const ConfirmDialog = lazy(() => import("@/components/admin/ConfirmDialog").then(module => ({ default: module.ConfirmDialog })));
 
 export default function ManageUserApp() {
   const [activeTab, setActiveTab] = useState("banners");
@@ -472,7 +475,7 @@ export default function ManageUserApp() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full min-w-0 overflow-x-hidden">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">CSM</h1>
@@ -484,7 +487,7 @@ export default function ManageUserApp() {
         console.log('[ManageUserApp] Tab changed to:', value);
         setActiveTab(value);
       }}>
-        <TabsList>
+        <TabsList className="w-full flex flex-wrap gap-2">
           <TabsTrigger value="banners">Hero Banners</TabsTrigger>
           <TabsTrigger value="offers">Special Offers</TabsTrigger>
           <TabsTrigger value="laptops">Laptop Offers</TabsTrigger>
@@ -586,9 +589,104 @@ export default function ManageUserApp() {
               </div>
             </Card>
           ) : (
-            <Card>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+            <>
+              {/* Mobile list view */}
+              <div className="sm:hidden space-y-3">
+                {banners.map((banner, index) => (
+                  <motion.div
+                    key={banner.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="rounded-lg border border-gray-200 bg-muted/30 overflow-hidden"
+                  >
+                    <div className="w-full aspect-[16/9] overflow-hidden">
+                      <img src={banner.imageUrl} alt={banner.title} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="p-3 flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="font-medium">{banner.title}</div>
+                        <Badge variant={banner.isActive ? "default" : "secondary"}>
+                          {banner.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                        <div className="text-xs text-muted-foreground">Sort: {banner.sortOrder}</div>
+                        <div className="text-xs text-muted-foreground">{banner.updatedAt}</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handlePreviewBanner(banner)}
+                          disabled={deletingId === banner.id}
+                          aria-label={`Preview banner ${banner.title}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditBanner(banner)}
+                          disabled={deletingId === banner.id}
+                          aria-label={`Edit banner ${banner.title}`}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteBanner(banner.id)}
+                          disabled={deletingId === banner.id}
+                          aria-label={`Delete banner ${banner.title}`}
+                        >
+                          {deletingId === banner.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+                {/* Mobile Pagination */}
+                <div className="flex items-center justify-between px-2 py-3">
+                  <div className="text-sm text-muted-foreground">Total: {total}</div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={offset === 0}
+                      onClick={() => {
+                        const nextOffset = Math.max(0, offset - limit);
+                        setOffset(nextOffset);
+                        updateUrl({ status, q, limit, offset: nextOffset });
+                        void listQuery.refetch();
+                      }}
+                    >
+                      Prev
+                    </Button>
+                    <span className="text-sm">{currentPage} / {pageCount}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={offset + limit >= total}
+                      onClick={() => {
+                        const nextOffset = offset + limit;
+                        setOffset(nextOffset);
+                        updateUrl({ status, q, limit, offset: nextOffset });
+                        void listQuery.refetch();
+                      }}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop table */}
+              <Card className="hidden sm:block">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
                   <thead className="border-b border-gray-200 bg-muted/50">
                     <tr>
                       <th className="text-left p-4 font-semibold text-sm">Preview</th>
@@ -699,6 +797,7 @@ export default function ManageUserApp() {
                 </div>
               </div>
             </Card>
+            </>
           )}
         </TabsContent>
 
@@ -841,14 +940,16 @@ export default function ManageUserApp() {
                 >
                   <Card className={`overflow-hidden ${laptopOffer.status === 'INACTIVE' ? 'opacity-60' : ''}`}>
                     <div className="aspect-square relative">
-                      <img
+                      <LazyImage
                         src={laptopOffer.imageUrl || 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400'}
                         alt={laptopOffer.model}
+                        fallbackSrc="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400"
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400';
-                        }}
+                        placeholder={
+                          <div className="flex items-center justify-center h-full">
+                            <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                          </div>
+                        }
                       />
                       <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs">
                         {laptopOffer.discountPercent}% OFF
@@ -913,42 +1014,44 @@ export default function ManageUserApp() {
         </TabsContent>
       </Tabs>
 
-      <BannerModal
-        open={bannerModalOpen}
-        onOpenChange={setBannerModalOpen}
-        onSave={handleSaveBanner}
-        banner={editingBanner}
-      />
+      <Suspense fallback={<LoadingSpinner size="sm" />}>
+        <BannerModal
+          open={bannerModalOpen}
+          onOpenChange={setBannerModalOpen}
+          onSave={handleSaveBanner}
+          banner={editingBanner}
+        />
 
-      <OfferModal
-        open={offerModalOpen}
-        onOpenChange={setOfferModalOpen}
-        onSave={handleSaveOffer}
-        offer={editingOffer}
-      />
+        <OfferModal
+          open={offerModalOpen}
+          onOpenChange={setOfferModalOpen}
+          onSave={handleSaveOffer}
+          offer={editingOffer}
+        />
 
-      <LaptopOfferModal
-        open={laptopOfferModalOpen}
-        onOpenChange={setLaptopOfferModalOpen}
-        onSave={handleSaveLaptopOffer}
-        offer={editingLaptopOffer}
-      />
+        <LaptopOfferModal
+          open={laptopOfferModalOpen}
+          onOpenChange={setLaptopOfferModalOpen}
+          onSave={handleSaveLaptopOffer}
+          offer={editingLaptopOffer}
+        />
 
-      <ConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        title={deleteTarget?.type === 'banner' ? "Delete banner?" : deleteTarget?.type === 'laptop' ? "Delete laptop offer?" : "Delete offer?"}
-        description={
-          deleteTarget?.type === 'banner'
-            ? "This will remove the banner from Home. You can't undo."
-            : deleteTarget?.type === 'laptop'
-            ? "This will remove the laptop offer. You can't undo."
-            : "This will remove the special offer. You can't undo."
-        }
-        isLoading={deleteMutation.isPending}
-        loadingText={deleteTarget?.type === 'banner' ? 'Deleting banner and image...' : deleteTarget?.type === 'laptop' ? 'Deleting laptop offer...' : 'Deleting offer...'}
-        onConfirm={confirmDelete}
-      />
+        <ConfirmDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          title={deleteTarget?.type === 'banner' ? "Delete banner?" : deleteTarget?.type === 'laptop' ? "Delete laptop offer?" : "Delete offer?"}
+          description={
+            deleteTarget?.type === 'banner'
+              ? "This will remove the banner from Home. You can't undo."
+              : deleteTarget?.type === 'laptop'
+              ? "This will remove the laptop offer. You can't undo."
+              : "This will remove the special offer. You can't undo."
+          }
+          isLoading={deleteMutation.isPending}
+          loadingText={deleteTarget?.type === 'banner' ? 'Deleting banner and image...' : deleteTarget?.type === 'laptop' ? 'Deleting laptop offer...' : 'Deleting offer...'}
+          onConfirm={confirmDelete}
+        />
+      </Suspense>
 
       {/* Preview Modal */}
       <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>

@@ -52,39 +52,41 @@ export function RequestsOverTimeChart() {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
-      <Card className="p-6">
-        <h3 className="text-xl font-semibold mb-6">Requests Over Time</h3>
+      <Card className="p-6 ">
+        <h3 className="text-xl font-semibold ">Requests Over Time</h3>
         {hasData ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart
-              data={chartData}
-              margin={{
-                top: 20,
-                right: 30,
-                left: 20,
-                bottom: 5,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-              <XAxis 
-                dataKey="date" 
-                axisLine={false}
-                tickLine={false}
-                className="text-sm"
-              />
-              <YAxis 
-                axisLine={false}
-                tickLine={false}
-                className="text-sm"
-              />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+          <div className="w-full h-[250px] md:h-[420px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={chartData}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
                 }}
-              />
+              >
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false}
+                  tickLine={false}
+                  className="text-sm md:text-xs"
+                />
+                <YAxis 
+                  axisLine={false}
+                  tickLine={false}
+                  className="text-sm md:text-xs"
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    fontSize: window.innerWidth < 768 ? '12px' : '14px'
+                  }}
+                />
               {visibleSeries.length > 1 && (
                 <Legend 
                   verticalAlign="bottom"
@@ -104,9 +106,10 @@ export function RequestsOverTimeChart() {
                 />
               ))}
             </LineChart>
-          </ResponsiveContainer>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+          <div className="flex items-center justify-center aspect-[16/9] md:aspect-[4/3] text-muted-foreground">
             <div className="text-center">
               <div className="text-2xl mb-2">📊</div>
               <p className="text-sm">No data for current filters</p>

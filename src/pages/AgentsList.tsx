@@ -114,7 +114,7 @@ export default function AgentsList() {
   const columns: Column<Agent>[] = [
     {
       key: "agent",
-      header: "Agent",
+      header: "AGENT",
       width: "300px",
       render: (_, agent) => (
         <div className="flex items-center gap-3">
@@ -133,12 +133,12 @@ export default function AgentsList() {
     },
     {
       key: "phone",
-      header: "Phone",
+      header: "PHONE",
       render: (_, agent) => agent.phone || "—",
     },
     {
       key: "active",
-      header: "Status",
+      header: "STATUS",
       render: (_, agent) => (
         <Badge 
           variant={agent.active ? "default" : "secondary"}
@@ -154,7 +154,7 @@ export default function AgentsList() {
     },
     {
       key: "operationalStatus",
-      header: "Operational Status",
+      header: "OPERATIONAL STATUS",
       render: (_, agent) => (
         <Badge 
           variant={agent.operationalStatus === "FREE" ? "default" : "secondary"}
@@ -170,7 +170,7 @@ export default function AgentsList() {
     },
     {
       key: "onboardingStatus",
-      header: "Onboarding Status",
+      header: "ONBOARDING STATUS",
       render: (_, agent) => (
         <Badge 
           variant={agent.onboardingStatus === "APPROVED" ? "default" : "secondary"}
@@ -186,14 +186,18 @@ export default function AgentsList() {
     },
     {
       key: "jobsDone",
-      header: "Jobs Done",
+      header: "JOBS DONE",
       sortable: true,
+      hideOnMobile: true,
+      mobileLabel: "Jobs",
       render: (_, agent) => agent.jobsDone.toLocaleString(),
     },
     {
       key: "ratingAvg",
-      header: "Rating Avg",
+      header: "RATING AVG",
       sortable: true,
+      hideOnMobile: true,
+      mobileLabel: "Rating",
       render: (_, agent) => (
         <div className="flex items-center gap-1">
           <span>{agent.ratingAvg.toFixed(1)}</span>
@@ -203,8 +207,10 @@ export default function AgentsList() {
     },
     {
       key: "createdAt",
-      header: "Date Added",
+      header: "DATE ADDED",
       sortable: true,
+      hideOnMobile: true,
+      mobileLabel: "Added",
       render: (_, agent) => {
         const date = new Date(agent.createdAt);
         const now = new Date();
@@ -307,9 +313,9 @@ export default function AgentsList() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Users className="h-8 w-8 text-primary" />
           <div>
@@ -319,7 +325,7 @@ export default function AgentsList() {
             </p>
           </div>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Agent
         </Button>
@@ -327,7 +333,7 @@ export default function AgentsList() {
 
       {/* Filters and Search */}
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-4 md:p-6">
           <FilterBar
             searchValue={filters.search}
             onSearchChange={(value) => setFilters({ search: value })}
@@ -343,16 +349,17 @@ export default function AgentsList() {
       {/* Bulk Actions */}
       {selectedAgents.length > 0 && (
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <span className="text-sm text-muted-foreground">
                 {selectedAgents.length} agent{selectedAgents.length !== 1 ? "s" : ""} selected
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleBulkActivate}
+                  className="flex-1 sm:flex-none"
                 >
                   <UserCheck className="h-4 w-4 mr-2" />
                   Activate
@@ -361,6 +368,7 @@ export default function AgentsList() {
                   variant="outline"
                   size="sm"
                   onClick={handleBulkDeactivate}
+                  className="flex-1 sm:flex-none"
                 >
                   <UserX className="h-4 w-4 mr-2" />
                   Deactivate
@@ -373,11 +381,13 @@ export default function AgentsList() {
 
       {/* Agents Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto min-w-0">
           <DataTable
             data={paginatedAgents}
             columns={columns}
             loading={loading}
+            responsive={true}
+            responsiveBreakpoint="lg"
             selectable
             selectedRows={selectedAgents}
             onSelectionChange={setSelectedAgents}
