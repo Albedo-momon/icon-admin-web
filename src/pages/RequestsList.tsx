@@ -1,49 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense, lazy } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   Search, 
-  ChevronDown, 
-  ChevronUp, 
-  MoreHorizontal,
-  Eye,
-  UserCheck,
-  X,
   RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { DataTable, type Column, type RowAction } from "@/components/ui/DataTable";
 import { useRequestsStore, type JobType, type PrimaryStatus, type RequestRow } from "@/stores/requestsStore";
-import ReassignModal from "@/components/requests/ReassignModal";
-import CancelModal from "@/components/requests/CancelModal";
 import { Chip, ChipGroup } from "@/components/ui/Chips";
 import { cn } from "@/lib/utils";
 import { DateRangePicker } from "../components/ui/DateRangePicker";
 import type { DateRange } from "react-day-picker";
+
+// Lazy load modal components for better performance
+const ReassignModal = lazy(() => import("@/components/requests/ReassignModal"));
+const CancelModal = lazy(() => import("@/components/requests/CancelModal"));
 
 // Type switch component using new Chips
 const TypeSwitch = () => {
@@ -143,176 +118,9 @@ const StatusBadge = ({ status }: { status: PrimaryStatus }) => {
   );
 };
 
-// Table row actions component with improved accessibility
-const RowActions = ({ 
-  request, 
-  onReassign, 
-  onCancel 
-}: { 
-  request: RequestRow;
-  onReassign: (request: RequestRow) => void;
-  onCancel: (request: RequestRow) => void;
-}) => {
-  const navigate = useNavigate();
-  
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0"
-          aria-label={`Actions for request ${request.id}`}
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => navigate(`/requests/${request.id}`)}>
-          <Eye className="mr-2 h-4 w-4" />
-          View Details
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => onReassign(request)}
-          className="flex items-center gap-2"
-        >
-          <UserCheck className="h-4 w-4" />
-          Reassign
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => onCancel(request)}
-          className="flex items-center gap-2 text-destructive"
-        >
-          <X className="h-4 w-4" />
-          Cancel
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
 
-// Sortable table header component
-const SortableHeader = ({ 
-  field, 
-  children, 
-  className 
-}: { 
-  field: keyof RequestRow; 
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  const { sort, setSort } = useRequestsStore();
-  
-  const handleSort = () => {
-    if (sort.field === field) {
-      setSort({ field, direction: sort.direction === "asc" ? "desc" : "asc" });
-    } else {
-      setSort({ field, direction: "asc" });
-    }
-  };
-  
-  return (
-    <TableHead 
-      className={cn("cursor-pointer select-none", className)}
-      onClick={handleSort}
-    >
-      <div className="flex items-center gap-2">
-        {children}
-        {sort.field === field && (
-          sort.direction === "asc" ? 
-            <ChevronUp className="h-4 w-4" /> : 
-            <ChevronDown className="h-4 w-4" />
-        )}
-      </div>
-    </TableHead>
-  );
-};
 
-// Pagination component
-const Pagination = () => {
-  const { pagination, setPagination } = useRequestsStore();
-  
-  const totalPages = Math.ceil(pagination.total / pagination.pageSize);
-  const startItem = (pagination.page - 1) * pagination.pageSize + 1;
-  const endItem = Math.min(pagination.page * pagination.pageSize, pagination.total);
-  
-  return (
-    <div className="flex items-center justify-between">
-      <div className="text-sm text-muted-foreground">
-        Showing {startItem}-{endItem} of {pagination.total} requests
-      </div>
-      
-      <div className="flex items-center gap-2">
-        <Select
-          value={pagination.pageSize.toString()}
-          onValueChange={(value) => setPagination({ pageSize: parseInt(value), page: 1 })}
-        >
-          <SelectTrigger className="w-20">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="10">10</SelectItem>
-            <SelectItem value="25">25</SelectItem>
-            <SelectItem value="50">50</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPagination({ page: pagination.page - 1 })}
-            disabled={pagination.page === 1}
-          >
-            Previous
-          </Button>
-          
-          <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const page = i + 1;
-              return (
-                <Button
-                  key={page}
-                  variant={pagination.page === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPagination({ page })}
-                  className="w-8"
-                >
-                  {page}
-                </Button>
-              );
-            })}
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPagination({ page: pagination.page + 1 })}
-            disabled={pagination.page === totalPages}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-// Empty state component
-const EmptyState = () => (
-  <div className="flex flex-col items-center justify-center py-12 text-center">
-    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-      <Search className="w-8 h-8 text-muted-foreground" />
-    </div>
-    <h3 className="text-lg font-semibold mb-2">No requests found</h3>
-    <p className="text-muted-foreground mb-4">
-      Try adjusting your filters or search terms
-    </p>
-    <Button variant="outline" onClick={() => useRequestsStore.getState().setFilters({ type: "ALL", status: "ALL", search: "" })}>
-      Clear Filters
-    </Button>
-  </div>
-);
 
 // Main component
 export default function RequestsList() {
@@ -322,8 +130,12 @@ export default function RequestsList() {
     filters, 
     setFilters, 
     isLoading, 
-    error, 
-    loadRequests
+    // error, // Commented out unused variable
+    loadRequests,
+    sort,
+    setSort,
+    pagination,
+    setPagination
   } = useRequestsStore();
   
   const [searchInput, setSearchInput] = useState(filters.search);
@@ -331,6 +143,96 @@ export default function RequestsList() {
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  // Table columns
+  const columns: Column<RequestRow>[] = [
+    {
+      key: "id",
+      header: "BOOKING ID",
+      sortable: true,
+      render: (_, request) => (
+        <button className="text-primary hover:underline font-medium">
+          {request.id}
+        </button>
+      ),
+    },
+    {
+      key: "jobType",
+      header: "TYPE",
+      render: (_, request) => <JobTypeBadge type={request.jobType} />,
+    },
+    {
+      key: "primaryStatus",
+      header: "STATUS",
+      render: (_, request) => <StatusBadge status={request.primaryStatus} />,
+    },
+    {
+      key: "user",
+      header: "USER",
+      sortable: true,
+      render: (_, request) => request.user.name,
+    },
+    {
+      key: "agent",
+      header: "AGENT",
+      hideOnMobile: true,
+      mobileLabel: "Agent",
+      render: (_, request) => (
+        request.agent ? (
+          <div className="flex items-center gap-2">
+            <span>{request.agent.name}</span>
+            <Badge 
+              variant={request.agent.status === "FREE" ? "outline" : "secondary"}
+              className="text-xs"
+            >
+              {request.agent.status}
+            </Badge>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">Unassigned</span>
+        )
+      ),
+    },
+    {
+      key: "createdAt",
+      header: "CREATED AT",
+      sortable: true,
+      hideOnMobile: true,
+      mobileLabel: "Created",
+      render: (_, request) => new Date(request.createdAt).toLocaleDateString(),
+    },
+    {
+      key: "updatedAt",
+      header: "LAST UPDATE",
+      sortable: true,
+      hideOnMobile: true,
+      mobileLabel: "Updated",
+      render: (_, request) => new Date(request.updatedAt).toLocaleDateString(),
+    },
+  ];
+
+  // Row actions
+  const rowActions: RowAction<RequestRow>[] = [
+    {
+      label: "View Details",
+      onClick: (request) => navigate(`/requests/${request.id}`),
+    },
+    {
+      label: "Reassign",
+      onClick: (request) => {
+        setSelectedRequest(request);
+        setShowReassignModal(true);
+      },
+    },
+    {
+      label: "Cancel",
+      onClick: (request) => {
+        setSelectedRequest(request);
+        setShowCancelModal(true);
+      },
+      variant: "destructive",
+    },
+  ];
   
   // Debounced search
   useEffect(() => {
@@ -357,15 +259,16 @@ export default function RequestsList() {
   // Action handlers
   const { reassignRequest, cancelRequest } = useRequestsStore();
   
-  const handleReassign = (request: RequestRow) => {
-    setSelectedRequest(request);
-    setShowReassignModal(true);
-  };
-
-  const handleCancel = (request: RequestRow) => {
-    setSelectedRequest(request);
-    setShowCancelModal(true);
-  };
+  // Commented out unused functions
+  // const handleReassign = (request: RequestRow) => {
+  //   setSelectedRequest(request);
+  //   setShowReassignModal(true);
+  // };
+  
+  // const handleCancel = (request: RequestRow) => {
+  //   setSelectedRequest(request);
+  //   setShowCancelModal(true);
+  // };
 
   const handleReassignConfirm = async (agentId: string) => {
     if (selectedRequest) {
@@ -388,9 +291,10 @@ export default function RequestsList() {
     loadRequests();
   }, [loadRequests]);
   
-  const handleRowClick = (request: RequestRow) => {
-    navigate(`/requests/${request.id}`);
-  };
+  // Commented out unused function
+  // const handleRowClick = (request: RequestRow) => {
+  //   navigate(`/requests/${request.id}`);
+  // };
   
   return (
     <div className="space-y-6">
@@ -410,8 +314,8 @@ export default function RequestsList() {
       
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filters</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg md:text-base">Filters</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Type Switch */}
@@ -426,8 +330,8 @@ export default function RequestsList() {
             <StatusChips />
           </div>
           
-          {/* Search and Date Range */}
-          <div className="flex gap-4">
+          {/* Search and Date Range - Responsive Layout */}
+          <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <label className="text-sm font-medium mb-2 block">Search</label>
               <div className="relative">
@@ -436,17 +340,17 @@ export default function RequestsList() {
                   placeholder="Search by Booking ID, user, or agent..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 w-full"
                 />
               </div>
             </div>
             
-            <div className="w-48">
+            <div className="w-full md:w-48">
               <label className="text-sm font-medium mb-2 block">Date Range</label>
               <DateRangePicker
                 value={dateRange}
                 onChange={setDateRange}
-                placeholder="Select dates"
+                placeholder="Select date range"
               />
             </div>
           </div>
@@ -456,101 +360,36 @@ export default function RequestsList() {
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <LoadingSpinner size="lg" text="Loading requests..." />
-            </div>
-          ) : error ? (
-            <div className="flex items-center justify-center py-12 text-center">
-              <div>
-                <p className="text-red-600 font-medium mb-2">Error loading requests</p>
-                <p className="text-muted-foreground mb-4">{error}</p>
-                <Button onClick={() => loadRequests()}>Try Again</Button>
-              </div>
-            </div>
-          ) : requests.length === 0 ? (
-            <EmptyState />
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <SortableHeader field="id">Booking ID</SortableHeader>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <SortableHeader field="user">User</SortableHeader>
-                    <TableHead>Agent</TableHead>
-                    <SortableHeader field="createdAt">Created At</SortableHeader>
-                    <SortableHeader field="updatedAt">Last Update</SortableHeader>
-                    <TableHead className="w-12">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {requests.map((request) => (
-                    <motion.tr
-                      key={request.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="cursor-pointer"
-                      onClick={() => handleRowClick(request)}
-                    >
-                      <TableCell className="font-medium">
-                        <button className="text-primary hover:underline">
-                          {request.id}
-                        </button>
-                      </TableCell>
-                      <TableCell>
-                        <JobTypeBadge type={request.jobType} />
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={request.primaryStatus} />
-                      </TableCell>
-                      <TableCell>{request.user.name}</TableCell>
-                      <TableCell>
-                        {request.agent ? (
-                          <div className="flex items-center gap-2">
-                            <span>{request.agent.name}</span>
-                            <Badge 
-                              variant={request.agent.status === "FREE" ? "outline" : "secondary"}
-                              className="text-xs"
-                            >
-                              {request.agent.status}
-                            </Badge>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">Unassigned</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(request.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(request.updatedAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <RowActions 
-                          request={request} 
-                          onReassign={handleReassign}
-                          onCancel={handleCancel}
-                        />
-                      </TableCell>
-                    </motion.tr>
-                  ))}
-                </TableBody>
-              </Table>
-              
-              {/* Pagination */}
-              <div className="border-t p-4">
-                <Pagination />
-              </div>
-            </>
-          )}
+          <DataTable
+            data={requests}
+            columns={columns}
+            loading={isLoading}
+            responsive={true}
+            sortBy={sort.field}
+            sortDirection={sort.direction}
+            onSort={(field, direction) => {
+              if (direction) {
+                setSort({ field: field as keyof RequestRow, direction });
+              }
+            }}
+            pagination={{
+              page: pagination.page,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              onPageChange: (page) => setPagination({ page }),
+              onPageSizeChange: (pageSize) => setPagination({ pageSize, page: 1 }),
+            }}
+            rowActions={rowActions}
+            emptyMessage="No requests found"
+            onRowClick={(request) => navigate(`/requests/${request.id}`)}
+            getRowId={(request) => request.id}
+          />
         </CardContent>
       </Card>
 
       {/* Action Modals */}
       {selectedRequest && (
-        <>
+        <Suspense fallback={<LoadingSpinner size="sm" />}>
           <ReassignModal
             isOpen={showReassignModal}
             onClose={() => {
@@ -569,7 +408,7 @@ export default function RequestsList() {
             onConfirm={handleCancelConfirm}
             request={selectedRequest}
           />
-        </>
+        </Suspense>
       )}
     </div>
   );

@@ -36,33 +36,35 @@ export function SLAComplianceChart() {
       <Card className="p-6">
         <h3 className="text-xl font-semibold mb-6">Request Type Split</h3>
         {hasData ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={2}
-                dataKey="value"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                iconType="square"
-                formatter={(value) => (
-                  <span className="text-sm font-medium">{value}</span>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="w-full aspect-[16/9] md:aspect-[4/3]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  iconType="square"
+                  formatter={(value) => (
+                    <span className="text-sm font-medium md:text-xs">{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+          <div className="aspect-[16/9] md:aspect-[4/3] flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <div className="text-2xl mb-2">📊</div>
               <p className="text-sm font-medium">No data for current filters</p>

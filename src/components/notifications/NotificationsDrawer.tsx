@@ -63,7 +63,7 @@ export function NotificationsDrawer({ children }: NotificationsDrawerProps) {
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className="w-96 p-0 bg-background/80 backdrop-blur-xl border-l border-border/50"
+        className="w-full md:w-96 p-0 bg-background/80 backdrop-blur-xl border-l border-border/50 md:max-w-96"
       >
         <motion.div
           initial={{ x: 24, opacity: 0 }}

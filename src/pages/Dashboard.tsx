@@ -1,9 +1,9 @@
+import { Suspense, lazy } from "react";
 import { KPICard } from "@/components/dashboard/KPICard";
-import { SLAComplianceChart } from "@/components/dashboard/SLAComplianceChart";
 import { QuickStats } from "@/components/dashboard/QuickStats";
-import { RequestsOverTimeChart } from "@/components/dashboard/RequestsOverTimeChart";
 import { TypeSwitch } from "@/components/dashboard/TypeSwitch";
 import { AttentionNeededCard } from "@/components/dashboard/AttentionNeededCard";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useDashboardStore } from "@/stores/dashboardStore";
 import { 
   Users, 
@@ -11,6 +11,10 @@ import {
   XCircle, 
   UserCheck
 } from "lucide-react";
+
+// Lazy load chart components for better performance
+const SLAComplianceChart = lazy(() => import("@/components/dashboard/SLAComplianceChart").then(module => ({ default: module.SLAComplianceChart })));
+const RequestsOverTimeChart = lazy(() => import("@/components/dashboard/RequestsOverTimeChart").then(module => ({ default: module.RequestsOverTimeChart })));
 
 export default function Dashboard() {
   const { counts, selectedType } = useDashboardStore();
@@ -71,8 +75,8 @@ export default function Dashboard() {
       {/* Header with Type Switch */}
       <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl lg:text-3xl md:text-2xl sm:text-xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground text-base md:text-sm">
             Welcome back! Here's what's happening with your requests.
           </p>
         </div>
@@ -80,49 +84,62 @@ export default function Dashboard() {
         {/* Type Switch and Filters Row */}
         <div className="flex flex-wrap items-center gap-4">
           <TypeSwitch />
-          <div className="text-sm text-muted-foreground">|</div>
-          <div className="text-sm font-medium text-muted-foreground">Quick Filters:</div>
+          <div className="text-sm text-muted-foreground hidden sm:block">|</div>
+          <div className="text-sm font-medium text-muted-foreground hidden sm:block">Quick Filters:</div>
           {/* Existing date range and search filters would go here */}
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* KPI Cards Grid - Responsive 12-column grid */}
+      <div className="grid grid-cols-12 gap-4">
+        {/* KPI Cards Section */}
+        <div className="col-span-12 xl:col-span-9 lg:col-span-8">
+          <div className="grid grid-cols-12 gap-4">
             {kpiData.map((kpi, index) => (
-              <KPICard
+              <div 
                 key={kpi.title}
-                title={kpi.title}
-                value={kpi.value}
-                change={kpi.change}
-                isPositive={kpi.isPositive}
-                icon={kpi.icon}
-                iconBgColor={kpi.iconBgColor}
-                tooltip={kpi.tooltip}
-                delay={index * 0.1}
-              />
+                className="col-span-12 sm:col-span-6 lg:col-span-4 xl:col-span-4"
+              >
+                <KPICard
+                  title={kpi.title}
+                  value={kpi.value}
+                  change={kpi.change}
+                  isPositive={kpi.isPositive}
+                  icon={kpi.icon}
+                  iconBgColor={kpi.iconBgColor}
+                  tooltip={kpi.tooltip}
+                  delay={index * 0.1}
+                />
+              </div>
             ))}
           </div>
         </div>
         
         {/* Attention Needed Card */}
-        <div className="lg:col-span-1">
+        <div className="col-span-12 xl:col-span-3 lg:col-span-4">
           <AttentionNeededCard />
         </div>
       </div>
 
-
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RequestsOverTimeChart />
-        <SLAComplianceChart />
+      {/* Charts Section - Responsive grid */}
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 lg:col-span-6">
+          <Suspense fallback={<div className="h-96 flex items-center justify-center"><LoadingSpinner /></div>}>
+            <RequestsOverTimeChart />
+          </Suspense>
+        </div>
+        <div className="col-span-12 lg:col-span-6">
+          <Suspense fallback={<div className="h-96 flex items-center justify-center"><LoadingSpinner /></div>}>
+            <SLAComplianceChart />
+          </Suspense>
+        </div>
       </div>
       
-      {/* Bottom Chart */}
-      <div className="grid grid-cols-1 gap-6">
-        <QuickStats />
+      {/* Bottom Chart - Full width */}
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12">
+          <QuickStats />
+        </div>
       </div>
     </div>
   );

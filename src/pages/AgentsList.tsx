@@ -188,12 +188,16 @@ export default function AgentsList() {
       key: "jobsDone",
       header: "JOBS DONE",
       sortable: true,
+      hideOnMobile: true,
+      mobileLabel: "Jobs",
       render: (_, agent) => agent.jobsDone.toLocaleString(),
     },
     {
       key: "ratingAvg",
       header: "RATING AVG",
       sortable: true,
+      hideOnMobile: true,
+      mobileLabel: "Rating",
       render: (_, agent) => (
         <div className="flex items-center gap-1">
           <span>{agent.ratingAvg.toFixed(1)}</span>
@@ -205,6 +209,8 @@ export default function AgentsList() {
       key: "createdAt",
       header: "DATE ADDED",
       sortable: true,
+      hideOnMobile: true,
+      mobileLabel: "Added",
       render: (_, agent) => {
         const date = new Date(agent.createdAt);
         const now = new Date();
@@ -327,7 +333,7 @@ export default function AgentsList() {
 
       {/* Filters and Search */}
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-4 md:p-6">
           <FilterBar
             searchValue={filters.search}
             onSearchChange={(value) => setFilters({ search: value })}
@@ -343,16 +349,17 @@ export default function AgentsList() {
       {/* Bulk Actions */}
       {selectedAgents.length > 0 && (
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <span className="text-sm text-muted-foreground">
                 {selectedAgents.length} agent{selectedAgents.length !== 1 ? "s" : ""} selected
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleBulkActivate}
+                  className="flex-1 sm:flex-none"
                 >
                   <UserCheck className="h-4 w-4 mr-2" />
                   Activate
@@ -361,6 +368,7 @@ export default function AgentsList() {
                   variant="outline"
                   size="sm"
                   onClick={handleBulkDeactivate}
+                  className="flex-1 sm:flex-none"
                 >
                   <UserX className="h-4 w-4 mr-2" />
                   Deactivate
@@ -378,6 +386,7 @@ export default function AgentsList() {
             data={paginatedAgents}
             columns={columns}
             loading={loading}
+            responsive={true}
             selectable
             selectedRows={selectedAgents}
             onSelectionChange={setSelectedAgents}

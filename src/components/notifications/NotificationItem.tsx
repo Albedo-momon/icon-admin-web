@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { MoreVertical, FileText, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -30,17 +29,6 @@ const iconMap = {
 
 const getNotificationIcon = (kind: NotificationKind) => {
   return iconMap[kind] || FileText;
-};
-
-// Severity color mapping
-const getSeverityColor = (severity: string): string => {
-  const colors: Record<string, string> = {
-    info: "text-blue-600 border-blue-200 bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:bg-blue-950",
-    success: "text-green-600 border-green-200 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950",
-    warning: "text-yellow-600 border-yellow-200 bg-yellow-50 dark:text-yellow-400 dark:border-yellow-800 dark:bg-yellow-950",
-    error: "text-red-600 border-red-200 bg-red-50 dark:text-red-400 dark:border-red-800 dark:bg-red-950"
-  };
-  return colors[severity] || colors.info;
 };
 
 const hrefByKind = (n: NotificationItemType) => {

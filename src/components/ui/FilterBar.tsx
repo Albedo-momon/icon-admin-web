@@ -168,7 +168,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         </div>
 
         {/* Filter Dropdowns */}
-        <div className="flex gap-2">
+        <div className={cn(
+          "flex gap-2",
+          compact ? "flex-wrap" : "flex-nowrap overflow-x-auto"
+        )}>
           {filterGroups.map((group) => {
             const selectedCount = selectedFilters[group.key]?.length || 0;
             
@@ -177,12 +180,16 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
-                    className="gap-2"
+                    className={cn(
+                      "gap-2 whitespace-nowrap",
+                      compact && "text-sm h-9"
+                    )}
                     aria-label={`Filter by ${group.label}`}
                     aria-expanded="false"
                   >
                     <Filter className="h-4 w-4" />
-                    {group.label}
+                    <span className="hidden sm:inline">{group.label}</span>
+                    <span className="sm:hidden">{group.label.split(' ')[0]}</span>
                     {selectedCount > 0 && (
                       <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                         {selectedCount}

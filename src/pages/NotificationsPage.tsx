@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Search, Bell, Check, X, RefreshCw } from "lucide-react";
+import { Search, Bell, Check, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { useNotificationsStore } from "@/stores/notificationsStore";
 import { NotificationItem } from "@/components/notifications/NotificationItem";
 
 const NotificationsPage = () => {
-  const { items, markRead, markAllRead, toggleRead, remove, clearAll, refreshData } = useNotificationsStore();
+  const { items, markRead, markAllRead, toggleRead, remove, refreshData } = useNotificationsStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());

@@ -15,6 +15,7 @@ import {
   CheckCircle,
   XCircle,
   BarChart3,
+  Users,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,6 @@ import { JobTypeBadge } from "./RequestsList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,16 +39,14 @@ import EditAgentModal from "@/components/agents/EditAgentModal";
 import DeleteAgentModal from "@/components/agents/DeleteAgentModal";
 import { cn } from "@/lib/utils";
 
-// Status chip component for agents
+// Status chip component
 const StatusChip = ({ active }: { active: boolean }) => {
   return (
     <Badge 
       variant={active ? "default" : "secondary"}
       className={cn(
         "font-medium",
-        active 
-          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
-          : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+        active ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
       )}
     >
       {active ? "Active" : "Inactive"}
@@ -60,12 +58,10 @@ const StatusChip = ({ active }: { active: boolean }) => {
 const OperationalStatusChip = ({ status }: { status: "FREE" | "BUSY" }) => {
   return (
     <Badge 
-      variant={status === "FREE" ? "outline" : "secondary"}
+      variant="outline"
       className={cn(
         "font-medium",
-        status === "FREE" 
-          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" 
-          : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+        status === "FREE" ? "border-green-500 text-green-700 dark:text-green-400" : "border-orange-500 text-orange-700 dark:text-orange-400"
       )}
     >
       {status}
@@ -80,12 +76,10 @@ const OnboardingStatusChip = ({ status }: { status: "PENDING" | "APPROVED" }) =>
       variant={status === "APPROVED" ? "default" : "secondary"}
       className={cn(
         "font-medium",
-        status === "APPROVED" 
-          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
-          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+        status === "APPROVED" ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
       )}
     >
-      {status === "APPROVED" ? "Approved" : "Pending"}
+      {status}
     </Badge>
   );
 };
@@ -94,13 +88,30 @@ const OnboardingStatusChip = ({ status }: { status: "PENDING" | "APPROVED" }) =>
 const RatingDisplay = ({ rating }: { rating: number }) => {
   return (
     <div className="flex items-center gap-1">
-      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-      <span className="font-medium">{rating.toFixed(1)}</span>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star key={star} className={`h-4 w-4 ${star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+      ))}
     </div>
   );
 };
 
-// Main component
+// Job status badge component
+const JobStatusBadge = ({ status }: { status: JobHistory["status"] }) => {
+  const variants = {
+    COMPLETED: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    IN_PROGRESS: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    PENDING: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+    ACCEPTED: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  };
+
+  return (
+    <Badge className={cn("font-medium", variants[status as keyof typeof variants])}>
+      {status}
+    </Badge>
+  );
+};
+
 export default function AgentDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -145,24 +156,24 @@ export default function AgentDetail() {
         
         setAgent(foundAgent);
         
-        // Load additional data
-        const [historyData, performanceData, feedbackData] = await Promise.all([
+        // Fetch additional data
+        const [jobHistoryData, performanceData, feedbackData] = await Promise.all([
           fetchAgentJobHistory(id),
           fetchAgentPerformance(id),
           fetchAgentFeedback(id)
         ]);
         
-        setJobHistory(historyData);
+        setJobHistory(jobHistoryData);
         setPerformance(performanceData);
         setFeedback(feedbackData);
-        
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load agent data");
+        setError("Failed to load agent data");
+        console.error("Error loading agent data:", err);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     loadAgentData();
   }, [id, agents, fetchAgents, fetchAgentJobHistory, fetchAgentPerformance, fetchAgentFeedback]);
 
@@ -173,7 +184,7 @@ export default function AgentDetail() {
       await updateAgent(agent.id, { active: !agent.active });
       setAgent({ ...agent, active: !agent.active });
     } catch (err) {
-      console.error("Failed to update agent status:", err);
+      console.error("Error updating agent status:", err);
     }
   };
 
@@ -188,7 +199,7 @@ export default function AgentDetail() {
       await deleteAgent(agent.id);
       navigate("/agents");
     } catch (err) {
-      console.error("Failed to delete agent:", err);
+      console.error("Error deleting agent:", err);
     }
   };
 
@@ -197,38 +208,38 @@ export default function AgentDetail() {
   };
 
   const handleEditSave = async (agentId: string, updatedAgent: UpdateAgentData) => {
-    if (!agent) return;
-    
     try {
       await updateAgent(agentId, updatedAgent);
-      setAgent({ ...agent, ...updatedAgent });
-      setShowEditModal(false);
+      // Refresh agent data
+      const updatedAgentData = agents.find(a => a.id === agentId);
+      if (updatedAgentData) {
+        setAgent(updatedAgentData);
+      }
     } catch (err) {
-      console.error("Failed to update agent:", err);
+      console.error("Error updating agent:", err);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner size="lg" text="Loading agent details..." />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   if (error || !agent) {
     return (
-      <div className="flex items-center justify-center py-12 text-center">
-        <div>
-          <p className="text-red-600 font-medium mb-2">Error loading agent</p>
-          <p className="text-muted-foreground mb-4">{error || "Agent not found"}</p>
-          <Button onClick={() => navigate("/agents")}>Back to Agents</Button>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <p className="text-lg text-muted-foreground">{error || "Agent not found"}</p>
+        <Button onClick={() => navigate("/agents")}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Agents
+        </Button>
       </div>
     );
   }
 
-  // Job history table columns
   const jobHistoryColumns = [
     {
       key: "requestId",
@@ -280,20 +291,31 @@ export default function AgentDetail() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate("/agents")}
-            className="shrink-0"
-            aria-label="Go back to agents list"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Agents
-          </Button>
-          
-          <div className="min-w-0">
+      <div className="space-y-4">
+        {/* Navigation Bar */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate("/agents")}
+              className="group hover:bg-primary hover:text-primary-foreground transition-all duration-200 border-2 hover:border-primary shadow-sm"
+              aria-label="Go back to agents list"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-0.5 transition-transform duration-200" />
+              <span className="font-medium">Back to Agents</span>
+            </Button>
+            <div className="h-6 w-px bg-border"></div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>Agent Profile</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Agent Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <h1 className="text-2xl lg:text-3xl font-bold tracking-tight truncate">{agent.name}</h1>
               <StatusChip active={agent.active} />
@@ -303,37 +325,37 @@ export default function AgentDetail() {
               Agent ID: {agent.id} • {agent.jobsDone} jobs completed
             </p>
           </div>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={handleEdit}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm"
-                aria-label="More actions for this agent"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem 
-                onClick={handleDelete}
-                className="text-red-600 focus:text-red-700"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Agent
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={handleEdit}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  aria-label="More actions for this agent"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem 
+                  onClick={handleDelete}
+                  className="text-red-600 focus:text-red-700"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Agent
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
-      {/* Header Card */}
+      {/* Agent Profile Card */}
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-6">
@@ -402,12 +424,14 @@ export default function AgentDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="jobs">Jobs History</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="w-full justify-start md:w-auto md:justify-center">
+            <TabsTrigger value="profile" className="whitespace-nowrap">Profile</TabsTrigger>
+            <TabsTrigger value="jobs" className="whitespace-nowrap">Jobs History</TabsTrigger>
+            <TabsTrigger value="performance" className="whitespace-nowrap">Performance</TabsTrigger>
+            <TabsTrigger value="feedback" className="whitespace-nowrap">Feedback</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6">
@@ -444,7 +468,7 @@ export default function AgentDetail() {
               </CardContent>
             </Card>
 
-            {/* Skills & Tags */}
+            {/* Skills & Expertise */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -491,7 +515,7 @@ export default function AgentDetail() {
         <TabsContent value="performance" className="space-y-6">
           {performance && (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-              {/* Performance Metrics Cards */}
+              {/* Jobs Completed */}
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -593,7 +617,6 @@ export default function AgentDetail() {
           onConfirm={handleEditSave}
         />
       )}
-
       {showDeleteModal && (
         <DeleteAgentModal
           agent={agent}
@@ -605,20 +628,3 @@ export default function AgentDetail() {
     </div>
   );
 }
-
-// Job status badge component
-const JobStatusBadge = ({ status }: { status: JobHistory["status"] }) => {
-  const variants = {
-    COMPLETED: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-    IN_PROGRESS: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    PENDING: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-    ACCEPTED: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  };
-
-  return (
-    <Badge className={cn("font-medium", variants[status as keyof typeof variants])}>
-      {status}
-    </Badge>
-  );
-};
