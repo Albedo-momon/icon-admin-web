@@ -154,3 +154,46 @@ export function AuthLoadingShimmer({ className }: AuthLoadingShimmerProps) {
     </div>
   );
 }
+
+interface LoginLoadingShimmerProps {
+  className?: string;
+}
+
+export function LoginLoadingShimmer({ className }: LoginLoadingShimmerProps) {
+  return (
+    <div className={cn('min-h-screen flex items-center justify-center p-4 bg-[image:var(--gradient-auth-bg)]', className)}>
+      <div className="w-full max-w-md">
+        {/* Brand header shimmer */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-card mb-4 shadow-lg">
+            <Shimmer className="w-8 h-8 rounded-md" />
+          </div>
+          <div className="space-y-2">
+            <Shimmer className="h-6 w-40 mx-auto" />
+            <Shimmer className="h-4 w-24 mx-auto" />
+          </div>
+        </div>
+
+        {/* Card shimmer mimicking login form */}
+        <div className="border rounded-2xl bg-card p-6 shadow-sm">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Shimmer className="h-5 w-24" />
+              <Shimmer className="h-11 w-full rounded-md" />
+            </div>
+            <div className="space-y-2">
+              <Shimmer className="h-5 w-24" />
+              <Shimmer className="h-11 w-full rounded-md" />
+            </div>
+            <div>
+              <Shimmer className="h-11 w-full rounded-md" />
+            </div>
+            <div className="text-center pt-2">
+              <Shimmer className="h-4 w-48 mx-auto" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
