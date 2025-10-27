@@ -186,7 +186,7 @@ export const useAuthStore = create<AuthState>()(
       return {
         user: null,
         isAuthenticated: false,
-        isLoading: true,
+        isLoading: true, // Start with loading true to prevent flash
         hasInitialized: false,
         rememberMe: false,
         userProfile: null,
