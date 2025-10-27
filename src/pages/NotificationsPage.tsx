@@ -122,10 +122,10 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface-base p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen w-full bg-surface-base overflow-x-hidden">
+      <div className="max-w-4xl mx-auto space-y-6 w-full min-w-0">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full min-w-0">
           <div className="flex items-center gap-3">
             <Bell className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-semibold text-text-strong">Notifications</h1>
@@ -135,7 +135,7 @@ const NotificationsPage = () => {
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
@@ -159,19 +159,19 @@ const NotificationsPage = () => {
         </div>
 
         {/* Search */}
-        <div className="relative max-w-md">
+        <div className="relative w-full sm:max-w-md min-w-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-muted" />
           <Input
             placeholder="Search notifications..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-surface-card border-border-soft"
+            className="w-full pl-10 bg-surface-card border-border-soft"
           />
         </div>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 bg-surface-card border border-border-soft">
+          <TabsList className="w-full flex flex-wrap gap-2 bg-surface-card border border-border-soft">
             <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-white">All</TabsTrigger>
             <TabsTrigger value="unread" className="data-[state=active]:bg-primary data-[state=active]:text-white">Unread</TabsTrigger>
             <TabsTrigger value="requests" className="data-[state=active]:bg-primary data-[state=active]:text-white">Requests</TabsTrigger>
@@ -185,7 +185,7 @@ const NotificationsPage = () => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 p-4 bg-surface-card border border-border-soft rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
+                className="flex flex-wrap items-center gap-2 p-4 bg-surface-card border border-border-soft rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
               >
                 <span className="text-sm text-text-muted">
                   {selectedItems.size} selected
@@ -204,7 +204,7 @@ const NotificationsPage = () => {
 
             {/* Select All */}
             {filteredItems.length > 0 && (
-              <div className="flex items-center gap-2 pb-2 border-b border-border-soft">
+              <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-border-soft">
                 <Checkbox
                   checked={selectedItems.size === filteredItems.length && filteredItems.length > 0}
                   onCheckedChange={handleSelectAll}

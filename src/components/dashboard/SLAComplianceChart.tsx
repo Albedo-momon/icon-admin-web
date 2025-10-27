@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useDashboardStore } from "@/stores/dashboardStore";
 
 export function SLAComplianceChart() {
@@ -33,10 +33,10 @@ export function SLAComplianceChart() {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.3 }}
     >
-      <Card className="p-6">
+      <Card className="p-8 min-w-0">
         <h3 className="text-xl font-semibold mb-6">Request Type Split</h3>
         {hasData ? (
-          <div className="w-full aspect-[16/9] md:aspect-[4/3]">
+          <div className="w-full h-[250px] md:h-[380px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -52,16 +52,21 @@ export function SLAComplianceChart() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Legend
-                  verticalAlign="bottom"
-                  height={36}
-                  iconType="square"
-                  formatter={(value) => (
-                    <span className="text-sm font-medium md:text-xs">{value}</span>
-                  )}
-                />
               </PieChart>
             </ResponsiveContainer>
+            {/* External legend to avoid clipping */}
+            <div className="flex flex-wrap items-center justify-center gap-4  ">
+              {data.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <span
+                    className="inline-block h-2 w-2 rounded-[2px]"
+                    style={{ backgroundColor: item.color }}
+                    aria-hidden="true"
+                  />
+                  <span className="text-sm font-medium md:text-xs">{item.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="aspect-[16/9] md:aspect-[4/3] flex items-center justify-center text-muted-foreground">

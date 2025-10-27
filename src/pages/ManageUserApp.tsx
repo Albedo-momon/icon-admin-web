@@ -475,7 +475,7 @@ export default function ManageUserApp() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full min-w-0 overflow-x-hidden">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">CSM</h1>
@@ -487,7 +487,7 @@ export default function ManageUserApp() {
         console.log('[ManageUserApp] Tab changed to:', value);
         setActiveTab(value);
       }}>
-        <TabsList>
+        <TabsList className="w-full flex flex-wrap gap-2">
           <TabsTrigger value="banners">Hero Banners</TabsTrigger>
           <TabsTrigger value="offers">Special Offers</TabsTrigger>
           <TabsTrigger value="laptops">Laptop Offers</TabsTrigger>
@@ -589,9 +589,104 @@ export default function ManageUserApp() {
               </div>
             </Card>
           ) : (
-            <Card>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+            <>
+              {/* Mobile list view */}
+              <div className="sm:hidden space-y-3">
+                {banners.map((banner, index) => (
+                  <motion.div
+                    key={banner.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="rounded-lg border border-gray-200 bg-muted/30 overflow-hidden"
+                  >
+                    <div className="w-full aspect-[16/9] overflow-hidden">
+                      <img src={banner.imageUrl} alt={banner.title} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="p-3 flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="font-medium">{banner.title}</div>
+                        <Badge variant={banner.isActive ? "default" : "secondary"}>
+                          {banner.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                        <div className="text-xs text-muted-foreground">Sort: {banner.sortOrder}</div>
+                        <div className="text-xs text-muted-foreground">{banner.updatedAt}</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handlePreviewBanner(banner)}
+                          disabled={deletingId === banner.id}
+                          aria-label={`Preview banner ${banner.title}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditBanner(banner)}
+                          disabled={deletingId === banner.id}
+                          aria-label={`Edit banner ${banner.title}`}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteBanner(banner.id)}
+                          disabled={deletingId === banner.id}
+                          aria-label={`Delete banner ${banner.title}`}
+                        >
+                          {deletingId === banner.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+                {/* Mobile Pagination */}
+                <div className="flex items-center justify-between px-2 py-3">
+                  <div className="text-sm text-muted-foreground">Total: {total}</div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={offset === 0}
+                      onClick={() => {
+                        const nextOffset = Math.max(0, offset - limit);
+                        setOffset(nextOffset);
+                        updateUrl({ status, q, limit, offset: nextOffset });
+                        void listQuery.refetch();
+                      }}
+                    >
+                      Prev
+                    </Button>
+                    <span className="text-sm">{currentPage} / {pageCount}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={offset + limit >= total}
+                      onClick={() => {
+                        const nextOffset = offset + limit;
+                        setOffset(nextOffset);
+                        updateUrl({ status, q, limit, offset: nextOffset });
+                        void listQuery.refetch();
+                      }}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop table */}
+              <Card className="hidden sm:block">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
                   <thead className="border-b border-gray-200 bg-muted/50">
                     <tr>
                       <th className="text-left p-4 font-semibold text-sm">Preview</th>
@@ -702,6 +797,7 @@ export default function ManageUserApp() {
                 </div>
               </div>
             </Card>
+            </>
           )}
         </TabsContent>
 

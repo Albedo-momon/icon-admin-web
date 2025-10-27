@@ -71,7 +71,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Header with Type Switch */}
       <div className="flex flex-col gap-4">
         <div>

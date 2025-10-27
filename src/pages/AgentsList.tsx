@@ -313,9 +313,9 @@ export default function AgentsList() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Users className="h-8 w-8 text-primary" />
           <div>
@@ -325,7 +325,7 @@ export default function AgentsList() {
             </p>
           </div>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Agent
         </Button>
@@ -381,12 +381,13 @@ export default function AgentsList() {
 
       {/* Agents Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto min-w-0">
           <DataTable
             data={paginatedAgents}
             columns={columns}
             loading={loading}
             responsive={true}
+            responsiveBreakpoint="lg"
             selectable
             selectedRows={selectedAgents}
             onSelectionChange={setSelectedAgents}

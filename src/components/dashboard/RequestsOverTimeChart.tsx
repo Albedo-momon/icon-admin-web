@@ -52,10 +52,10 @@ export function RequestsOverTimeChart() {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
-      <Card className="p-6">
-        <h3 className="text-xl font-semibold mb-6">Requests Over Time</h3>
+      <Card className="p-6 ">
+        <h3 className="text-xl font-semibold ">Requests Over Time</h3>
         {hasData ? (
-          <div className="w-full aspect-[16/9] md:aspect-[4/3]">
+          <div className="w-full h-[250px] md:h-[420px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={chartData}

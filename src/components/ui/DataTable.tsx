@@ -78,6 +78,7 @@ export interface DataTableProps<T> {
   getRowId?: (row: T) => string | number;
   onRowClick?: (row: T) => void;
   responsive?: boolean; // New prop to enable responsive behavior
+  responsiveBreakpoint?: "sm" | "md" | "lg" | "xl"; // breakpoint at which table view appears
 }
 
 export function DataTable<T>({
@@ -97,6 +98,7 @@ export function DataTable<T>({
   getRowId = (row: T) => (row as any).id || (row as any).key || String(row),
   onRowClick,
   responsive = false,
+  responsiveBreakpoint = "md",
 }: DataTableProps<T>) {
   const [internalSortBy, setInternalSortBy] = useState<string | null>(null);
   const [internalSortDirection, setInternalSortDirection] = useState<SortDirection>(null);
@@ -290,7 +292,12 @@ export function DataTable<T>({
     <div className={cn("space-y-4", className)} role="region" aria-label="Data table with sorting and pagination">
       {/* Mobile view - stacked cards */}
       {responsive && (
-        <div className="md:hidden space-y-3">
+        <div className={cn(
+          responsiveBreakpoint === "lg" ? "lg:hidden" : 
+          responsiveBreakpoint === "xl" ? "xl:hidden" : 
+          responsiveBreakpoint === "sm" ? "sm:hidden" : "md:hidden",
+          "space-y-3"
+        )}>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center text-muted-foreground">Loading...</div>
@@ -308,7 +315,14 @@ export function DataTable<T>({
       )}
 
       {/* Desktop table view */}
-      <div className={cn("rounded-lg bg-card overflow-hidden", responsive && "hidden md:block")}>
+      <div className={cn(
+        "rounded-lg bg-card overflow-hidden",
+        responsive && (
+          responsiveBreakpoint === "lg" ? "hidden lg:block" : 
+          responsiveBreakpoint === "xl" ? "hidden xl:block" : 
+          responsiveBreakpoint === "sm" ? "hidden sm:block" : "hidden md:block"
+        )
+      )}>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>

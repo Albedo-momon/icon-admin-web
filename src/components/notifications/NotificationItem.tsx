@@ -100,7 +100,7 @@ export function NotificationItem({
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: variant === "page" ? -1 : 0 }}
       className={cn(
-        "bg-card border border-card-border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/30 cursor-pointer",
+        "bg-card border border-card-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/30 cursor-pointer",
         !item.read && "border-primary/50 bg-primary/5"
       )}
       onClick={handleClick}

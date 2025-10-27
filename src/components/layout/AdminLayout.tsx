@@ -11,11 +11,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full bg-background overflow-x-hidden">
       <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col md:ml-64">
+      <div className="flex-1 flex flex-col md:ml-64 min-w-0">
         <AdminTopbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 px-6 lg:px-6 md:px-4 sm:px-3 xs:px-3 py-6">
+        <main className="flex-1 px-6 lg:px-6 md:px-4 sm:px-3 xs:px-3 py-6 min-w-0">
           {children}
         </main>
       </div>
