@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import type { FieldErrors, FieldValues, UseFormWatch } from 'react-hook-form';
+import type { FieldValues, UseFormWatch } from 'react-hook-form';
 import type { ZodSchema } from 'zod';
 
 interface UseRealTimeValidationProps<T extends FieldValues> {

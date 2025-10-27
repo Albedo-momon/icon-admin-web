@@ -104,7 +104,7 @@ export const useAuthStore = create<AuthState>()(
             
             if (isSignedIn && clerkInstance.user) {
               console.log('AuthStore - Valid Clerk user found, attempting backend sync');
-              const user = convertClerkUser(clerkInstance.user);
+              // User conversion not needed here as we use userProfile from handshake
               
               // Try to perform handshake to sync with backend
               try {

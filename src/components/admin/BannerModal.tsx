@@ -14,10 +14,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+
 import { Progress } from "@/components/ui/progress";
 import type { Banner } from "@/store/adminStore";
-import { useAuthStore } from "@/stores/authStore";
+
 import { toast } from "@/hooks/use-toast";
 import { env } from "@/env";
 import { getJWTToken } from "@/services/jwtService";
@@ -77,7 +77,7 @@ export function BannerModal({ open, onOpenChange, onSave, banner }: BannerModalP
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [cachedPublicUrl, setCachedPublicUrl] = useState<string>('');
-  const { user } = useAuthStore();
+
 
   const {
     register,
@@ -85,7 +85,7 @@ export function BannerModal({ open, onOpenChange, onSave, banner }: BannerModalP
     formState: { errors },
     watch,
     reset,
-    setValue,
+
   } = useForm<BannerFormData>({
     resolver: zodResolver(bannerSchema),
     defaultValues: {

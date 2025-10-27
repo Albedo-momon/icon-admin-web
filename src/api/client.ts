@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from 'axios'
+import axios from 'axios'
 import { env } from '../env'
 import { getJWTToken } from '../services/jwtService'
 
